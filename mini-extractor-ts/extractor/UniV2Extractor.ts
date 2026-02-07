@@ -2,8 +2,8 @@ import path from 'node:path'
 import { type Address, decodeEventLog, type Log, type PublicClient } from 'viem'
 import {
   factoryAbi,
-  uniswapV2PairAbi,
   UniV2EventsListenAbi,
+  uniswapV2PairAbi,
 } from '../lib/abi.js'
 import { logger } from '../lib/logger.js'
 import type { Token } from '../lib/token.js'
@@ -36,6 +36,7 @@ export class UniV2Extractor {
   readonly logFilter: LogFilter2
   readonly poolPermanentCache: PermanentCache<PoolCacheRecord>
   readonly syncStatePath: string
+  readonly maxPools: number // 0 = unlimited
 
   private readonly pendingLogDiscovery: Set<string> = new Set()
 
@@ -48,11 +49,13 @@ export class UniV2Extractor {
     cacheDir: string,
     logFilter: LogFilter2,
     tokenManager: TokenManager,
+    maxPools = 0,
   ) {
     this.client = client
     this.factories = factories
     this.tokenManager = tokenManager
     this.logFilter = logFilter
+    this.maxPools = maxPools
     this.syncStatePath = path.resolve(cacheDir, `uniV2SyncState.json`)
 
     this.poolPermanentCache = new PermanentCache(cacheDir, `uniV2Pools`)
@@ -267,6 +270,14 @@ export class UniV2Extractor {
     const SYNC_WRITE_INTERVAL = 10_000 // flush sync state every 10s
 
     for (let i = lastSynced; i < onChainCount; i += MULTICALL_BATCH_SIZE) {
+      // Check pool cap
+      if (this.maxPools > 0 && this.poolMap.size >= this.maxPools) {
+        this.consoleLog(
+          `  ${factory.provider}: reached maxPools cap (${this.maxPools}), stopping sync`,
+        )
+        break
+      }
+
       const end = Math.min(i + MULTICALL_BATCH_SIZE, onChainCount)
       const chunkSize = end - i
 
@@ -435,7 +446,17 @@ export class UniV2Extractor {
     }
     const rawEntries: RawEntry[] = []
 
+    // Determine how many cached pools to load (respect maxPools cap)
+    let maxToLoad = cachedRecords.length
+    if (this.maxPools > 0) {
+      maxToLoad = Math.max(0, this.maxPools - this.poolMap.size)
+      this.consoleLog(
+        `maxPools=${this.maxPools}, existing=${this.poolMap.size}, capping cache load to ${maxToLoad} pools`,
+      )
+    }
+
     for (const r of cachedRecords) {
+      if (this.maxPools > 0 && rawEntries.length >= maxToLoad) break
       const addrL = r.address.toLowerCase()
       if (seen.has(addrL) || this.poolMap.has(addrL)) continue
       seen.add(addrL)

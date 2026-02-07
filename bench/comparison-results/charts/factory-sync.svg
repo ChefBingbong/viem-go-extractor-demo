@@ -8,31 +8,31 @@
   <line x1="140" y1="60" x2="140" y2="350" stroke="#e5e7eb" stroke-width="1"/>
 <text x="140" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.000000</text>
 <line x1="248" y1="60" x2="248" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="248" y="370" text-anchor="middle" fill="#6b7280" font-size="11">187.1</text>
+<text x="248" y="370" text-anchor="middle" fill="#6b7280" font-size="11">460.4</text>
 <line x1="356" y1="60" x2="356" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="356" y="370" text-anchor="middle" fill="#6b7280" font-size="11">374.1</text>
+<text x="356" y="370" text-anchor="middle" fill="#6b7280" font-size="11">920.8</text>
 <line x1="464" y1="60" x2="464" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="464" y="370" text-anchor="middle" fill="#6b7280" font-size="11">561.2</text>
+<text x="464" y="370" text-anchor="middle" fill="#6b7280" font-size="11">1.4k</text>
 <line x1="572" y1="60" x2="572" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="572" y="370" text-anchor="middle" fill="#6b7280" font-size="11">748.2</text>
+<text x="572" y="370" text-anchor="middle" fill="#6b7280" font-size="11">1.8k</text>
 <line x1="680" y1="60" x2="680" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="680" y="370" text-anchor="middle" fill="#6b7280" font-size="11">935.3</text>
+<text x="680" y="370" text-anchor="middle" fill="#6b7280" font-size="11">2.3k</text>
 
   <text x="132" y="112.33333333333334" text-anchor="end" fill="#374151" font-size="12">Chunk 50</text>
-<rect x="140" y="69.66666666666667" width="90.56275854641619" height="29" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="236.5627585464162" y="88.16666666666667" fill="#00ADD8" font-size="11" font-weight="600">156.9 ms</text>
-<rect x="140" y="100.66666666666667" width="199.98024939366104" height="29" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="345.98024939366104" y="119.16666666666667" fill="#3178C6" font-size="11" font-weight="600">346.4 ms</text>
+<rect x="140" y="69.66666666666667" width="33.11786463079963" height="29" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="179.11786463079963" y="88.16666666666667" fill="#00ADD8" font-size="11" font-weight="600">141.2 ms</text>
+<rect x="140" y="100.66666666666667" width="72.96457703031928" height="29" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="218.96457703031928" y="119.16666666666667" fill="#3178C6" font-size="11" font-weight="600">311.1 ms</text>
 <text x="132" y="209.00000000000003" text-anchor="end" fill="#374151" font-size="12">Chunk 100</text>
-<rect x="140" y="166.33333333333334" width="128.08897159829493" height="29" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="274.08897159829496" y="184.83333333333334" fill="#00ADD8" font-size="11" font-weight="600">221.8 ms</text>
-<rect x="140" y="197.33333333333334" width="163.81485767986055" height="29" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="309.81485767986055" y="215.83333333333334" fill="#3178C6" font-size="11" font-weight="600">283.7 ms</text>
+<rect x="140" y="166.33333333333334" width="51.6953036233763" height="29" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="197.6953036233763" y="184.83333333333334" fill="#00ADD8" font-size="11" font-weight="600">220.4 ms</text>
+<rect x="140" y="197.33333333333334" width="113.2440666422253" height="29" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="259.24406664222533" y="215.83333333333334" fill="#3178C6" font-size="11" font-weight="600">482.8 ms</text>
 <text x="132" y="305.6666666666667" text-anchor="end" fill="#374151" font-size="12">Chunk 500</text>
-<rect x="140" y="263" width="441.2757522384128" height="29" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="587.2757522384128" y="281.5" fill="#00ADD8" font-size="11" font-weight="600">764.3 ms</text>
+<rect x="140" y="263" width="174.40605257272634" height="29" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="320.40605257272637" y="281.5" fill="#00ADD8" font-size="11" font-weight="600">743.5 ms</text>
 <rect x="140" y="294" width="540" height="29" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="686" y="312.5" fill="#3178C6" font-size="11" font-weight="600">935.3 ms</text>
+<text x="686" y="312.5" fill="#3178C6" font-size="11" font-weight="600">2.3k ms</text>
 
   
     <rect x="690" y="60" width="12" height="12" rx="2" fill="#00ADD8"/>

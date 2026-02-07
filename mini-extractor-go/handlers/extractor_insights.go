@@ -54,7 +54,7 @@ func HealthHandler(ext *extractor.Extractor) http.HandlerFunc {
 
 		resp := map[string]any{
 			"status":  "ok",
-			"pools":   len(ext.GetPools()),
+			"pools":   ext.PoolCount(),
 			"syncing": ext.IsSyncing(),
 		}
 

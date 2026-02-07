@@ -234,9 +234,12 @@ func (lf *LogFilter2) Stop(signalStopping bool) {
 	}
 }
 
-// Restart restarts the log filter.
+// Restart restarts the log filter with a backoff delay to avoid
+// hammering a rate-limited RPC in a tight restart loop.
 func (lf *LogFilter2) Restart() {
 	lf.Stop(true)
+	lib.Info("LogFilter restarting in 5s...")
+	time.Sleep(5 * time.Second)
 	lf.Start()
 }
 

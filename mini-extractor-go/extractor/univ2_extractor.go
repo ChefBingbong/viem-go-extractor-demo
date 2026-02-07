@@ -74,6 +74,7 @@ type UniV2Extractor struct {
 	logFilter          *LogFilter2
 	poolPermanentCache *PermanentCache[PoolCacheRecord]
 	syncStatePath      string
+	maxPools           int // 0 = unlimited
 
 	started bool
 	syncing bool
@@ -87,6 +88,7 @@ func NewUniV2Extractor(
 	logFilter *LogFilter2,
 	tokenManager *TokenManager,
 	chainID int,
+	maxPools int,
 ) *UniV2Extractor {
 	factoryMap := make(map[string]FactoryV2, len(factories))
 	for _, f := range factories {
@@ -102,6 +104,7 @@ func NewUniV2Extractor(
 		logFilter:          logFilter,
 		poolPermanentCache: NewPermanentCache[PoolCacheRecord](cacheDir, fmt.Sprintf("uniV2Pools-%d", chainID)),
 		syncStatePath:      filepath.Join(cacheDir, fmt.Sprintf("uniV2SyncState-%d.json", chainID)),
+		maxPools:           maxPools,
 	}
 
 	// Register log filter for Sync events
@@ -109,7 +112,6 @@ func NewUniV2Extractor(
 	logFilter.AddFilter([]string{syncTopic}, func(logs []formatters.Log) {
 		if logs == nil {
 			lib.ExtractorError("UniV2: Log collecting failed")
-			return
 		}
 
 		eventKnown := 0
@@ -376,6 +378,17 @@ func (ext *UniV2Extractor) syncFactoryStreaming(ctx context.Context, factory Fac
 	const syncWriteInterval = 10 * time.Second
 
 	for i := lastSynced; i < onChainCount; i += multicallBatchSize {
+		// Check pool cap
+		if ext.maxPools > 0 {
+			ext.poolMu.RLock()
+			poolCount := len(ext.poolMap)
+			ext.poolMu.RUnlock()
+			if poolCount >= ext.maxPools {
+				ext.consoleLog(fmt.Sprintf("  %s: reached maxPools cap (%d), stopping sync", factory.Provider, ext.maxPools))
+				break
+			}
+		}
+
 		end := i + multicallBatchSize
 		if end > onChainCount {
 			end = onChainCount
@@ -587,7 +600,24 @@ func (ext *UniV2Extractor) loadCachedPools(ctx context.Context, startTime time.T
 	var rawEntries []rawEntry
 
 	ext.poolMu.RLock()
+	existingCount := len(ext.poolMap)
+	ext.poolMu.RUnlock()
+
+	// Determine how many cached pools to load (respect maxPools cap)
+	maxToLoad := len(cachedRecords)
+	if ext.maxPools > 0 && ext.maxPools-existingCount < maxToLoad {
+		maxToLoad = ext.maxPools - existingCount
+		if maxToLoad < 0 {
+			maxToLoad = 0
+		}
+		ext.consoleLog(fmt.Sprintf("maxPools=%d, existing=%d, capping cache load to %d pools", ext.maxPools, existingCount, maxToLoad))
+	}
+
+	ext.poolMu.RLock()
 	for _, r := range cachedRecords {
+		if ext.maxPools > 0 && len(rawEntries) >= maxToLoad {
+			break
+		}
 		addrL := strings.ToLower(r.Address)
 		if _, ok := seen[addrL]; ok {
 			continue
@@ -805,3 +835,10 @@ func (ext *UniV2Extractor) consoleLog(msg string) {
 
 func (ext *UniV2Extractor) IsStarted() bool { return ext.started }
 func (ext *UniV2Extractor) IsSyncing() bool { return ext.syncing }
+
+// PoolCount returns the number of known pools without copying the map.
+func (ext *UniV2Extractor) PoolCount() int {
+	ext.poolMu.RLock()
+	defer ext.poolMu.RUnlock()
+	return len(ext.poolMap)
+}

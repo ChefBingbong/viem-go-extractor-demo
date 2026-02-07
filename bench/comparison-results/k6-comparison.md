@@ -1,6 +1,6 @@
 # k6 API Load Test Comparison: Go vs TypeScript
 
-> Generated: 2026-02-07T03:33:23.285Z
+> Generated: 2026-02-07T04:08:30.022Z
 > Pool limit: ?limit=1000 (equal data volume for both services)
 
 ---
@@ -11,16 +11,16 @@
 
 | Percentile | Go | TS | Winner | Speedup |
 |------------|----|----|--------|---------|
-| avg | 23.54ms | 1.93ms | 🟪 TS | TS 12.2x |
-| med | 11.05ms | 0.30ms | 🟪 TS | TS 36.4x |
-| p(90) | 59.92ms | 3.56ms | 🟪 TS | TS 16.8x |
-| p(95) | 84.61ms | 5.94ms | 🟪 TS | TS 14.3x |
-| p(99) | 162.26ms | 21.04ms | 🟪 TS | TS 7.7x |
-| max | 594.88ms | 455.28ms | 🟪 TS | TS 1.3x |
+| avg | 0.76ms | 0.94ms | 🟦 Go | Go 1.2x |
+| med | 0.39ms | 0.56ms | 🟦 Go | Go 1.4x |
+| p(90) | 1.70ms | 2.26ms | 🟦 Go | Go 1.3x |
+| p(95) | 2.48ms | 2.81ms | 🟦 Go | Go 1.1x |
+| p(99) | 5.96ms | 5.13ms | 🟪 TS | TS 1.2x |
+| max | 45.89ms | 16.00ms | 🟪 TS | TS 2.9x |
 
 | Metric | Go | TS |
 |--------|----|----|
-| Total requests | 51,718 | 51,718 |
+| Total requests | 76,596 | 76,796 |
 | Error rate | 0.00% | 0.00% |
 
 ## /extractor-insights — Heavy Endpoint (serializes pools)
@@ -29,17 +29,17 @@
 
 | Percentile | Go | TS | Winner | Speedup |
 |------------|----|----|--------|---------|
-| avg | 42.60ms | 10.01ms | 🟪 TS | TS 4.3x |
-| med | 14.47ms | 2.55ms | 🟪 TS | TS 5.7x |
-| p(90) | 103.24ms | 25.47ms | 🟪 TS | TS 4.1x |
-| p(95) | 151.51ms | 43.83ms | 🟪 TS | TS 3.5x |
-| p(99) | 354.81ms | 110.07ms | 🟪 TS | TS 3.2x |
-| max | 1.63s | 422.06ms | 🟪 TS | TS 3.9x |
+| avg | 0.98ms | 3.87ms | 🟦 Go | Go 3.9x |
+| med | 0.52ms | 0.92ms | 🟦 Go | Go 1.8x |
+| p(90) | 1.31ms | 3.74ms | 🟦 Go | Go 2.9x |
+| p(95) | 2.34ms | 8.65ms | 🟦 Go | Go 3.7x |
+| p(99) | 9.31ms | 90.58ms | 🟦 Go | Go 9.7x |
+| max | 144.37ms | 330.48ms | 🟦 Go | Go 2.3x |
 
 | Metric | Go | TS |
 |--------|----|----|
-| Total requests | 29,934 | 29,934 |
-| Total bytes transferred | 3.4 GB | 3.4 GB |
+| Total requests | 51,485 | 49,481 |
+| Total bytes transferred | 5.8 GB | 5.6 GB |
 | Error rate | 0.00% | 0.00% |
 
 ## Stress Test — High Concurrency (50 steady → 200 spike VUs)
@@ -48,17 +48,17 @@
 
 | Percentile | Go | TS | Winner | Speedup |
 |------------|----|----|--------|---------|
-| avg | 423.76ms | 77.45ms | 🟪 TS | TS 5.5x |
-| med | 256.41ms | 45.51ms | 🟪 TS | TS 5.6x |
-| p(90) | 1.03s | 172.53ms | 🟪 TS | TS 6.0x |
-| p(95) | 1.35s | 203.32ms | 🟪 TS | TS 6.7x |
-| p(99) | 2.07s | 315.27ms | 🟪 TS | TS 6.6x |
-| max | 3.67s | 610.43ms | 🟪 TS | TS 6.0x |
+| avg | 33.43ms | 55.62ms | 🟦 Go | Go 1.7x |
+| med | 10.55ms | 29.68ms | 🟦 Go | Go 2.8x |
+| p(90) | 64.70ms | 138.53ms | 🟦 Go | Go 2.1x |
+| p(95) | 127.45ms | 188.80ms | 🟦 Go | Go 1.5x |
+| p(99) | 474.52ms | 328.95ms | 🟪 TS | TS 1.4x |
+| max | 2.15s | 881.21ms | 🟪 TS | TS 2.4x |
 
 | Metric | Go | TS |
 |--------|----|----|
-| Total requests | 28,350 | 135,796 |
-| Total bytes | 3.2 GB | 15.4 GB |
+| Total requests | 137,996 | 140,333 |
+| Total bytes | 15.6 GB | 15.9 GB |
 | Error rate | 0.00% | 0.00% |
 
 ---
@@ -67,11 +67,11 @@
 
 | Suite | Go p95 | TS p95 | Winner | Speedup |
 |-------|--------|--------|--------|---------|
-| /health | 84.61ms | 5.94ms | 🟪 TS | TS 14.3x |
-| /insights | 151.51ms | 43.83ms | 🟪 TS | TS 3.5x |
-| Stress | 1.35s | 203.32ms | 🟪 TS | TS 6.7x |
+| /health | 2.48ms | 2.81ms | 🟦 Go | Go 1.1x |
+| /insights | 2.34ms | 8.65ms | 🟦 Go | Go 3.7x |
+| Stress | 127.45ms | 188.80ms | 🟦 Go | Go 1.5x |
 
-**Overall API winner (by p95)**: **TypeScript** (Go: 0, TS: 3)
+**Overall API winner (by p95)**: **Go** (Go: 3, TS: 0)
 
 ---
 

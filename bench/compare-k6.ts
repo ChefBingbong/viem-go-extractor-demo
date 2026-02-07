@@ -10,8 +10,8 @@
  * Usage:  bun run bench/compare-k6.ts
  */
 
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
@@ -21,8 +21,10 @@ const OUT_DIR = resolve(ROOT, 'comparison-results')
 const CHARTS_DIR = resolve(OUT_DIR, 'charts')
 
 const K6_FILES = {
-  health: resolve(RESULTS_DIR, 'k6-health.json'),
-  insights: resolve(RESULTS_DIR, 'k6-insights.json'),
+  healthTs: resolve(RESULTS_DIR, 'k6-health-ts.json'),
+  healthGo: resolve(RESULTS_DIR, 'k6-health-go.json'),
+  insightsTs: resolve(RESULTS_DIR, 'k6-insights-ts.json'),
+  insightsGo: resolve(RESULTS_DIR, 'k6-insights-go.json'),
   stressTs: resolve(RESULTS_DIR, 'k6-stress-ts.json'),
   stressGo: resolve(RESULTS_DIR, 'k6-stress-go.json'),
 }
@@ -80,71 +82,68 @@ function loadJson(path: string): any | null {
   }
 }
 
-function parseHealth(): SuiteResult | null {
-  const data = loadJson(K6_FILES.health)
-  if (!data) return null
+// Each k6 script now runs against a single service, so metric names
+// are unprefixed: health_latency, insights_latency, stress_latency, etc.
+
+function parseSuite(
+  name: string,
+  tsFile: string,
+  goFile: string,
+  latencyMetric: string,
+  errorsMetric: string,
+  reqsMetric: string,
+  bytesMetric: string | null,
+): SuiteResult | null {
+  const tsData = loadJson(tsFile)
+  const goData = loadJson(goFile)
+  if (!tsData && !goData) return null
   return {
-    name: '/health',
-    goLatency: extractMetric(data, 'go_health_latency'),
-    tsLatency: extractMetric(data, 'ts_health_latency'),
-    goErrorRate: extractRate(data, 'go_health_errors'),
-    tsErrorRate: extractRate(data, 'ts_health_errors'),
-    goReqs: extractCount(data, 'go_health_reqs'),
-    tsReqs: extractCount(data, 'ts_health_reqs'),
-    goBytes: null,
-    tsBytes: null,
+    name,
+    goLatency: goData ? extractMetric(goData, latencyMetric) : null,
+    tsLatency: tsData ? extractMetric(tsData, latencyMetric) : null,
+    goErrorRate: goData ? extractRate(goData, errorsMetric) : null,
+    tsErrorRate: tsData ? extractRate(tsData, errorsMetric) : null,
+    goReqs: goData ? extractCount(goData, reqsMetric) : null,
+    tsReqs: tsData ? extractCount(tsData, reqsMetric) : null,
+    goBytes: goData && bytesMetric ? extractCount(goData, bytesMetric) : null,
+    tsBytes: tsData && bytesMetric ? extractCount(tsData, bytesMetric) : null,
   }
+}
+
+function parseHealth(): SuiteResult | null {
+  return parseSuite(
+    '/health',
+    K6_FILES.healthTs,
+    K6_FILES.healthGo,
+    'health_latency',
+    'health_errors',
+    'health_reqs',
+    null,
+  )
 }
 
 function parseInsights(): SuiteResult | null {
-  const data = loadJson(K6_FILES.insights)
-  if (!data) return null
-  return {
-    name: '/extractor-insights',
-    goLatency: extractMetric(data, 'go_insights_latency'),
-    tsLatency: extractMetric(data, 'ts_insights_latency'),
-    goErrorRate: extractRate(data, 'go_insights_errors'),
-    tsErrorRate: extractRate(data, 'ts_insights_errors'),
-    goReqs: extractCount(data, 'go_insights_reqs'),
-    tsReqs: extractCount(data, 'ts_insights_reqs'),
-    goBytes: extractCount(data, 'go_insights_bytes'),
-    tsBytes: extractCount(data, 'ts_insights_bytes'),
-  }
+  return parseSuite(
+    '/extractor-insights',
+    K6_FILES.insightsTs,
+    K6_FILES.insightsGo,
+    'insights_latency',
+    'insights_errors',
+    'insights_reqs',
+    'insights_bytes',
+  )
 }
 
-function parseStress(): { ts: SuiteResult | null; go: SuiteResult | null } {
-  const tsData = loadJson(K6_FILES.stressTs)
-  const goData = loadJson(K6_FILES.stressGo)
-
-  const ts: SuiteResult | null = tsData
-    ? {
-        name: 'Stress (TS)',
-        goLatency: null,
-        tsLatency: extractMetric(tsData, 'stress_latency'),
-        goErrorRate: null,
-        tsErrorRate: extractRate(tsData, 'stress_errors'),
-        goReqs: null,
-        tsReqs: extractCount(tsData, 'stress_total_requests'),
-        goBytes: null,
-        tsBytes: extractCount(tsData, 'stress_total_bytes'),
-      }
-    : null
-
-  const go: SuiteResult | null = goData
-    ? {
-        name: 'Stress (Go)',
-        goLatency: extractMetric(goData, 'stress_latency'),
-        tsLatency: null,
-        goErrorRate: extractRate(goData, 'stress_errors'),
-        tsErrorRate: null,
-        goReqs: extractCount(goData, 'stress_total_requests'),
-        tsReqs: null,
-        goBytes: extractCount(goData, 'stress_total_bytes'),
-        tsBytes: null,
-      }
-    : null
-
-  return { ts, go }
+function parseStress(): SuiteResult | null {
+  return parseSuite(
+    'Stress',
+    K6_FILES.stressTs,
+    K6_FILES.stressGo,
+    'stress_latency',
+    'stress_errors',
+    'stress_total_requests',
+    'stress_total_bytes',
+  )
 }
 
 // ─── SVG Charts ──────────────────────────────────────────────────────────────
@@ -177,7 +176,9 @@ function generatePercentileChart(opts: {
   const chartW = W - marginLeft - marginRight
   const chartH = H - marginTop - marginBottom
 
-  const allVals = [...goValues, ...tsValues].filter((v): v is number => v !== null && v > 0)
+  const allVals = [...goValues, ...tsValues].filter(
+    (v): v is number => v !== null && v > 0,
+  )
   const maxVal = Math.max(...allVals, 1)
   const barGroupH = chartH / labels.length
   const barH = barGroupH * 0.3
@@ -264,7 +265,8 @@ function main() {
   }
 
   console.log(`Found k6 results: ${found.join(', ')}`)
-  if (missing.length > 0) console.log(`Missing (skipped): ${missing.join(', ')}`)
+  if (missing.length > 0)
+    console.log(`Missing (skipped): ${missing.join(', ')}`)
 
   // ─── Generate charts ────────────────────────────────────────────
 
@@ -296,16 +298,14 @@ function main() {
     )
   }
 
-  if (stress.ts || stress.go) {
-    const tsLat = stress.ts?.tsLatency
-    const goLat = stress.go?.goLatency
+  if (stress) {
     writeFileSync(
       resolve(CHARTS_DIR, 'k6-stress-latency.svg'),
       generatePercentileChart({
         title: 'Stress Test Latency Percentiles (ms) — lower is better',
         labels: [...percentiles],
-        goValues: percentiles.map((p) => goLat?.[p] ?? null),
-        tsValues: percentiles.map((p) => tsLat?.[p] ?? null),
+        goValues: percentiles.map((p) => stress.goLatency?.[p] ?? null),
+        tsValues: percentiles.map((p) => stress.tsLatency?.[p] ?? null),
         unit: 'ms',
       }),
     )
@@ -408,7 +408,7 @@ function main() {
   }
 
   // Stress section
-  if (stress.ts || stress.go) {
+  if (stress) {
     md += `## Stress Test — High Concurrency (50 steady → 200 spike VUs)
 
 ![Stress Latency](./charts/k6-stress-latency.svg)
@@ -417,16 +417,16 @@ function main() {
 |------------|----|----|--------|---------|
 `
     for (const p of percentiles) {
-      const g = stress.go?.goLatency?.[p] ?? null
-      const t = stress.ts?.tsLatency?.[p] ?? null
+      const g = stress.goLatency?.[p] ?? null
+      const t = stress.tsLatency?.[p] ?? null
       md += `| ${p} | ${fmtMs(g)} | ${fmtMs(t)} | ${winner(g, t)} | ${speedup(g, t)} |\n`
     }
     md += `
 | Metric | Go | TS |
 |--------|----|----|
-| Total requests | ${fmtCount(stress.go?.goReqs ?? null)} | ${fmtCount(stress.ts?.tsReqs ?? null)} |
-| Total bytes | ${fmtBytes(stress.go?.goBytes ?? null)} | ${fmtBytes(stress.ts?.tsBytes ?? null)} |
-| Error rate | ${fmtRate(stress.go?.goErrorRate ?? null)} | ${fmtRate(stress.ts?.tsErrorRate ?? null)} |
+| Total requests | ${fmtCount(stress.goReqs)} | ${fmtCount(stress.tsReqs)} |
+| Total bytes | ${fmtBytes(stress.goBytes)} | ${fmtBytes(stress.tsBytes)} |
+| Error rate | ${fmtRate(stress.goErrorRate)} | ${fmtRate(stress.tsErrorRate)} |
 
 `
   }
@@ -439,10 +439,29 @@ function main() {
 
 `
 
-  const allComparisons: { suite: string; p95Go: number | null; p95Ts: number | null }[] = []
-  if (health) allComparisons.push({ suite: '/health', p95Go: health.goLatency?.['p(95)'] ?? null, p95Ts: health.tsLatency?.['p(95)'] ?? null })
-  if (insights) allComparisons.push({ suite: '/insights', p95Go: insights.goLatency?.['p(95)'] ?? null, p95Ts: insights.tsLatency?.['p(95)'] ?? null })
-  if (stress.go && stress.ts) allComparisons.push({ suite: 'Stress', p95Go: stress.go.goLatency?.['p(95)'] ?? null, p95Ts: stress.ts.tsLatency?.['p(95)'] ?? null })
+  const allComparisons: {
+    suite: string
+    p95Go: number | null
+    p95Ts: number | null
+  }[] = []
+  if (health)
+    allComparisons.push({
+      suite: '/health',
+      p95Go: health.goLatency?.['p(95)'] ?? null,
+      p95Ts: health.tsLatency?.['p(95)'] ?? null,
+    })
+  if (insights)
+    allComparisons.push({
+      suite: '/insights',
+      p95Go: insights.goLatency?.['p(95)'] ?? null,
+      p95Ts: insights.tsLatency?.['p(95)'] ?? null,
+    })
+  if (stress)
+    allComparisons.push({
+      suite: 'Stress',
+      p95Go: stress.goLatency?.['p(95)'] ?? null,
+      p95Ts: stress.tsLatency?.['p(95)'] ?? null,
+    })
 
   md += `| Suite | Go p95 | TS p95 | Winner | Speedup |
 |-------|--------|--------|--------|---------|
@@ -456,7 +475,8 @@ function main() {
     md += `| ${c.suite} | ${fmtMs(c.p95Go)} | ${fmtMs(c.p95Ts)} | ${w} | ${speedup(c.p95Go, c.p95Ts)} |\n`
   }
 
-  const overall = goWins > tsWins ? 'Go' : goWins < tsWins ? 'TypeScript' : 'Tied'
+  const overall =
+    goWins > tsWins ? 'Go' : goWins < tsWins ? 'TypeScript' : 'Tied'
   md += `\n**Overall API winner (by p95)**: **${overall}** (Go: ${goWins}, TS: ${tsWins})\n`
 
   md += `
@@ -470,7 +490,11 @@ function main() {
   writeFileSync(resolve(OUT_DIR, 'k6-comparison.md'), md)
   writeFileSync(
     resolve(OUT_DIR, 'k6-comparison.json'),
-    JSON.stringify({ health, insights, stress, summary: { goWins, tsWins, overall } }, null, 2),
+    JSON.stringify(
+      { health, insights, stress, summary: { goWins, tsWins, overall } },
+      null,
+      2,
+    ),
   )
 
   // ─── Console summary ───────────────────────────────────────────
@@ -480,7 +504,9 @@ function main() {
   console.log('='.repeat(60))
   for (const c of allComparisons) {
     const w = winner(c.p95Go, c.p95Ts)
-    console.log(`  ${c.suite.padEnd(20)} Go p95=${fmtMs(c.p95Go).padEnd(10)} TS p95=${fmtMs(c.p95Ts).padEnd(10)} ${w}`)
+    console.log(
+      `  ${c.suite.padEnd(20)} Go p95=${fmtMs(c.p95Go).padEnd(10)} TS p95=${fmtMs(c.p95Ts).padEnd(10)} ${w}`,
+    )
   }
   console.log(`\n  Overall: ${overall}`)
   console.log(`\n  Output:`)

@@ -12,9 +12,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/ChefBingbong/mini-extractor-go/extractor"
 	univ2factory "github.com/ChefBingbong/mini-extractor-go/_contracts_typed/contract_templates/univ2factory"
 	univ2pair "github.com/ChefBingbong/mini-extractor-go/_contracts_typed/contract_templates/univ2pair"
+	"github.com/ChefBingbong/mini-extractor-go/extractor"
 	"github.com/ChefBingbong/viem-go/actions/public"
 	"github.com/ChefBingbong/viem-go/chain/definitions"
 	"github.com/ChefBingbong/viem-go/client"
@@ -47,11 +47,10 @@ func setupClient(t testing.TB) *client.PublicClient {
 		Transport: transport.HTTP(rpcURL(t)),
 		Batch: &client.BatchOptions{
 			Multicall: &client.MulticallBatchOptions{
-				BatchSize: 2048,
+				BatchSize: 8196,
 				Wait:      16 * time.Millisecond,
 			},
 		},
-		PollingInterval: 200 * time.Millisecond,
 	})
 	if err != nil {
 		t.Fatal(err)

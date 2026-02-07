@@ -1,6 +1,6 @@
 # Benchmark Comparison: Go (viem-go) vs TypeScript (viem)
 
-> Generated: 2026-02-07T03:34:21.533Z
+> Generated: 2026-02-07T05:07:34.318Z
 > CPU: Apple M4 Pro
 > Go benchmarks: 3 runs averaged | TS benchmarks: variable iterations
 
@@ -11,8 +11,8 @@
 | Metric | Value |
 |--------|-------|
 | **Overall Winner** | **Go (viem-go)** |
-| Go wins | 8 / 14 |
-| TypeScript wins | 4 / 14 |
+| Go wins | 10 / 14 |
+| TypeScript wins | 2 / 14 |
 | Ties (<5% diff) | 2 / 14 |
 
 ![Winner Breakdown](./charts/winner-breakdown.svg)
@@ -27,11 +27,11 @@
 
 | Benchmark | Go (avg) | TS (avg) | Winner | Speedup | Go allocs/op | Go B/op |
 |-----------|----------|----------|--------|---------|-------------|---------|
-| Single getReserves | 69.94ms | 71.75ms | ⬜ Tie | ~1.0x | 291 | 28,570 B |
-| Batch 10 | 74.37ms | 71.01ms | ⬜ Tie | ~1.0x | 831 | 162,861 B |
-| Batch 50 | 74.61ms | 93.53ms | 🟦 Go | Go 1.3x | 3,138 | 574,150 B |
-| Batch 100 | 83.61ms | 220.06ms | 🟦 Go | Go 2.6x | 6,003 | 1,086,227 B |
-| Batch 200 | 97.60ms | 345.50ms | 🟦 Go | Go 3.5x | 11,725 | 2,054,158 B |
+| Single getReserves | 65.97ms | 73.05ms | 🟦 Go | Go 1.1x | 190 | 19,410 B |
+| Batch 10 | 69.01ms | 71.06ms | ⬜ Tie | ~1.0x | 696 | 144,747 B |
+| Batch 50 | 77.09ms | 86.48ms | 🟦 Go | Go 1.1x | 2,848 | 545,306 B |
+| Batch 100 | 75.31ms | 326.57ms | 🟦 Go | Go 4.3x | 5,500 | 991,640 B |
+| Batch 200 | 90.73ms | 285.21ms | 🟦 Go | Go 3.1x | 10,820 | 1,937,133 B |
 
 ### Event Decoding
 
@@ -39,8 +39,8 @@
 
 | Benchmark | Go (avg) | TS (avg) | Winner | Speedup | Go allocs/op | Go B/op |
 |-----------|----------|----------|--------|---------|-------------|---------|
-| Single Sync decode | 238ns | 2.2us | 🟦 Go | Go 9.1x | 5 | 272 B |
-| Batch 1000 Sync decode | 200.2us | 2.16ms | 🟦 Go | Go 10.8x | 5,000 | 272,001 B |
+| Single Sync decode | 153ns | 1.7us | 🟦 Go | Go 11.4x | 5 | 272 B |
+| Batch 1000 Sync decode | 165.9us | 1.77ms | 🟦 Go | Go 10.7x | 5,000 | 272,001 B |
 
 ### Factory Sync
 
@@ -48,9 +48,9 @@
 
 | Benchmark | Go (avg) | TS (avg) | Winner | Speedup | Go allocs/op | Go B/op |
 |-----------|----------|----------|--------|---------|-------------|---------|
-| Chunk 50 | 156.85ms | 346.36ms | 🟦 Go | Go 2.2x | 11,112 | 2,057,992 B |
-| Chunk 100 | 221.85ms | 283.72ms | 🟦 Go | Go 1.3x | 21,653 | 4,120,195 B |
-| Chunk 500 | 764.28ms | 935.27ms | 🟦 Go | Go 1.2x | 106,406 | 19,970,985 B |
+| Chunk 50 | 141.18ms | 311.05ms | 🟦 Go | Go 2.2x | 10,112 | 1,917,883 B |
+| Chunk 100 | 220.38ms | 482.77ms | 🟦 Go | Go 2.2x | 19,842 | 3,829,553 B |
+| Chunk 500 | 743.51ms | 2.30s | 🟦 Go | Go 3.1x | 97,980 | 18,974,422 B |
 
 ### JSON Serialization
 
@@ -58,10 +58,10 @@
 
 | Benchmark | Go (avg) | TS (avg) | Winner | Speedup | Go allocs/op | Go B/op |
 |-----------|----------|----------|--------|---------|-------------|---------|
-| 100 pools | 52.4us | 28.3us | 🟪 TypeScript | TypeScript 1.9x | 10 | 41,283 B |
-| 1,000 pools | 523.1us | 227.3us | 🟪 TypeScript | TypeScript 2.3x | 10 | 385,757 B |
-| 5,000 pools | 2.54ms | 1.45ms | 🟪 TypeScript | TypeScript 1.7x | 10 | 1,910,268 B |
-| 10,000 pools | 6.81ms | 3.29ms | 🟪 TypeScript | TypeScript 2.1x | 10 | 3,813,457 B |
+| 100 pools | 53.4us | 48.1us | 🟪 TypeScript | TypeScript 1.1x | 10 | 41,286 B |
+| 1,000 pools | 567.9us | 539.0us | 🟪 TypeScript | TypeScript 1.1x | 10 | 385,808 B |
+| 5,000 pools | 2.68ms | 2.75ms | ⬜ Tie | ~1.0x | 10 | 1,911,606 B |
+| 10,000 pools | 5.09ms | 5.61ms | 🟦 Go | Go 1.1x | 10 | 3,813,629 B |
 
 ---
 
@@ -71,9 +71,9 @@
 
 Both implementations use multicall to batch on-chain reads into single RPC calls.
 
-- **Single call latency**: Go 69.94ms vs TS 71.75ms
-- **Batch 200 latency**: Go 97.60ms vs TS 345.50ms
-- **Scaling factor (1 -> 200)**: Go 1.4x vs TS 4.8x increase
+- **Single call latency**: Go 65.97ms vs TS 73.05ms
+- **Batch 200 latency**: Go 90.73ms vs TS 285.21ms
+- **Scaling factor (1 -> 200)**: Go 1.4x vs TS 3.9x increase
 
 Go's viem-go client has lower single-call latency, benefiting from Go's lightweight goroutine scheduling and efficient net/http stack. As batch sizes increase, both scale sub-linearly thanks to multicall aggregation.
 
@@ -81,33 +81,33 @@ Go's viem-go client has lower single-call latency, benefiting from Go's lightwei
 
 Event decoding is a pure CPU-bound operation (no RPC) — this is where language runtime differences show most clearly.
 
-- **Go**: 238ns/event (4,196,978 ops/sec) — 5 allocs/op, 272 B/op
-- **TS**: 2.2us/event (459,222 ops/sec)
+- **Go**: 153ns/event (6,548,788 ops/sec) — 5 allocs/op, 272 B/op
+- **TS**: 1.7us/event (573,690 ops/sec)
 
-Go's decode is **9.1x faster** per event. Go's `DecodeSyncEvent` does raw byte slicing on the hex data, while viem's `decodeEventLog` performs full ABI resolution.
+Go's decode is **11.4x faster** per event. Go's `DecodeSyncEvent` does raw byte slicing on the hex data, while viem's `decodeEventLog` performs full ABI resolution.
 
 ### 3. Factory Sync (On-Chain Data at Scale)
 
 Factory sync simulates the real-world workload: fetching pair addresses, then batching token0/token1/getReserves calls for all of them. This tests the full pipeline including RPC I/O, response parsing, and multicall encoding.
 
-- **50 pools**: Go 156.85ms vs TS 346.36ms
-- **500 pools**: Go 764.28ms vs TS 935.27ms
+- **50 pools**: Go 141.18ms vs TS 311.05ms
+- **500 pools**: Go 743.51ms vs TS 2.30s
 
-At 500 pools, Go is **1.2x faster**. This is the most representative benchmark for comparing how each version handles extreme on-chain data lookups, as it mirrors the actual `syncFactoryStreaming` hot path.
+At 500 pools, Go is **3.1x faster**. This is the most representative benchmark for comparing how each version handles extreme on-chain data lookups, as it mirrors the actual `syncFactoryStreaming` hot path.
 
 ### 4. JSON Serialization (API Response Performance)
 
 The `/extractor-insights` endpoint serializes the entire pool map to JSON. This directly impacts API response time under load.
 
-- **100 pools**: Go 52.4us vs TS 28.3us
-- **10,000 pools**: Go 6.81ms vs TS 3.29ms
+- **100 pools**: Go 53.4us vs TS 48.1us
+- **10,000 pools**: Go 5.09ms vs TS 5.61ms
 
-Bun's `JSON.stringify` is **2.1x faster** at 10k pools. At this scale the serialization cost becomes a significant portion of API latency — consider streaming JSON or pagination if pool counts grow much further.
+Go's `encoding/json` is **1.1x faster** at 10k pools. At this scale the serialization cost becomes a significant portion of API latency — consider streaming JSON or pagination if pool counts grow much further.
 
 ### 5. Memory Usage
 
-**Go**: 0.03 MB for 10,000 pools (~0.00 KB/pool)
-**TypeScript**: 47.36 MB heap at end of benchmark run
+**Go**: 0.02 MB for 10,000 pools (~0.00 KB/pool)
+**TypeScript**: heap stats not available (vitest bench does not report per-benchmark memory)
 
 > **Note**: Memory comparisons are approximate. Go reports heap allocations via `runtime.MemStats`, while TS reports `process.memoryUsage().heapUsed`. The TS number includes all benchmark overhead in the same process.
 
@@ -117,15 +117,15 @@ Bun's `JSON.stringify` is **2.1x faster** at 10k pools. At this scale the serial
 
 | Category | Winner | Margin |
 |----------|--------|--------|
-| Multicall | 🟦 Go | 3/5 benchmarks |
+| Multicall | 🟦 Go | 4/5 benchmarks |
 | Event Decoding | 🟦 Go | 2/2 benchmarks |
 | Factory Sync | 🟦 Go | 3/3 benchmarks |
-| JSON Serialization | 🟪 TypeScript | 4/4 benchmarks |
+| JSON Serialization | 🟪 TypeScript | 2/4 benchmarks |
 
 ### Key Takeaways
 
-1. **Go (viem-go) wins 8/14 benchmarks overall.** Go's advantages come from its compiled nature, lower GC overhead, and efficient memory allocation patterns.
-2. **TypeScript (viem) wins 4/14 benchmarks.** Bun's JIT compilation and viem's mature, well-optimized API make it competitive, especially for I/O-bound multicall operations.
+1. **Go (viem-go) wins 10/14 benchmarks overall.** Go's advantages come from its compiled nature, lower GC overhead, and efficient memory allocation patterns.
+2. **TypeScript (viem) wins 2/14 benchmarks.** Bun's JIT compilation and viem's mature, well-optimized API make it competitive, especially for I/O-bound multicall operations.
 3. **For production use**: If your bottleneck is on-chain data throughput (syncing thousands of pools), Go has a meaningful edge. If your bottleneck is API latency at moderate pool counts, both are equally capable.
 
 ---

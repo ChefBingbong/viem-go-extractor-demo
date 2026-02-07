@@ -15,6 +15,7 @@ type Config struct {
 	CacheDir    string
 	LogType     LogFilterType
 	LogDepth    int
+	MaxPools    int // 0 = unlimited; >0 = stop background sync after this many pools
 	Debug       bool
 }
 
@@ -56,6 +57,7 @@ func NewExtractor(cfg Config) *Extractor {
 		logFilter,
 		tokenManager,
 		chainID,
+		cfg.MaxPools,
 	)
 
 	return &Extractor{
@@ -95,4 +97,9 @@ func (e *Extractor) IsStarted() bool {
 // IsSyncing returns true if background factory sync is in progress.
 func (e *Extractor) IsSyncing() bool {
 	return e.ExtractorV2.IsSyncing()
+}
+
+// PoolCount returns the number of known pools without copying.
+func (e *Extractor) PoolCount() int {
+	return e.ExtractorV2.PoolCount()
 }

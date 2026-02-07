@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { logger } from '../lib/logger.js'
-import { SyncState } from './UniV2Types.js'
+import type { SyncState } from './UniV2Types.js'
 
 export const delay = async (ms: number) =>
   new Promise((res) => setTimeout(res, ms))

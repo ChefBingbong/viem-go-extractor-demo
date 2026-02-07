@@ -11,8 +11,8 @@
  * Usage:  bun run bench/compare.ts
  */
 
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
@@ -33,16 +33,38 @@ interface GoBenchEntry {
   msPerOp: number
 }
 
-interface TsBenchEntry {
+// vitest bench outputJson format (tinybench results)
+interface VitestBenchOutput {
+  files: {
+    filepath: string
+    groups: {
+      fullName: string
+      benchmarks: VitestBenchmark[]
+    }[]
+  }[]
+}
+
+interface VitestBenchmark {
   name: string
-  runs: number
-  iterations: number
-  avgNsPerOp: number
-  avgMsPerOp: number
-  minNsPerOp: number
-  maxNsPerOp: number
-  opsPerSec: number
-  heapMB: number
+  rank: number
+  rme: number
+  samples: number[]
+  hz: number
+  min: number
+  max: number
+  mean: number // ms per op
+  median: number
+  p75: number
+  p99: number
+  p995: number
+  p999: number
+}
+
+// Flattened entry for comparison
+interface TsBenchEntry {
+  name: string // "GroupName > benchName"
+  avgMsPerOp: number // mean from vitest (ms)
+  hz: number // ops/sec
 }
 
 interface ComparisonRow {
@@ -65,7 +87,11 @@ interface GoMemoryEntry {
 
 // ─── Parse Go Benchmark Output ──────────────────────────────────────────────
 
-function parseGoBench(raw: string): { benches: GoBenchEntry[]; memory: GoMemoryEntry[]; cpu: string } {
+function parseGoBench(raw: string): {
+  benches: GoBenchEntry[]
+  memory: GoMemoryEntry[]
+  cpu: string
+} {
   const benches: GoBenchEntry[] = []
   const memory: GoMemoryEntry[] = []
   let cpu = 'unknown'
@@ -74,7 +100,8 @@ function parseGoBench(raw: string): { benches: GoBenchEntry[]; memory: GoMemoryE
   if (cpuMatch) cpu = cpuMatch[1].trim()
 
   // Parse benchmark lines: BenchmarkName-N  <iters>  <ns/op>  <B/op>  <allocs/op>
-  const benchRe = /^(Benchmark\S+)-\d+\s+(\d+)\s+([\d.]+)\s+ns\/op\s+([\d.]+)\s+B\/op\s+(\d+)\s+allocs\/op$/gm
+  const benchRe =
+    /^(Benchmark\S+)-\d+\s+(\d+)\s+([\d.]+)\s+ns\/op\s+([\d.]+)\s+B\/op\s+(\d+)\s+allocs\/op$/gm
   let m: RegExpExecArray | null
   while ((m = benchRe.exec(raw)) !== null) {
     benches.push({
@@ -92,7 +119,11 @@ function parseGoBench(raw: string): { benches: GoBenchEntry[]; memory: GoMemoryE
   while ((m = memRe.exec(raw)) !== null) {
     const count = Number.parseInt(m[1].replace(/,/g, ''))
     const mb = Number.parseFloat(m[2])
-    memory.push({ poolCount: count, memoryMB: mb, kbPerPool: (mb * 1024) / count })
+    memory.push({
+      poolCount: count,
+      memoryMB: mb,
+      kbPerPool: (mb * 1024) / count,
+    })
   }
 
   return { benches, memory, cpu }
@@ -111,10 +142,14 @@ function averageGoRuns(entries: GoBenchEntry[]): Map<string, GoBenchEntry> {
   for (const [name, runs] of groups) {
     const avg: GoBenchEntry = {
       name,
-      iterations: Math.round(runs.reduce((s, r) => s + r.iterations, 0) / runs.length),
+      iterations: Math.round(
+        runs.reduce((s, r) => s + r.iterations, 0) / runs.length,
+      ),
       nsPerOp: runs.reduce((s, r) => s + r.nsPerOp, 0) / runs.length,
       bytesPerOp: runs.reduce((s, r) => s + r.bytesPerOp, 0) / runs.length,
-      allocsPerOp: Math.round(runs.reduce((s, r) => s + r.allocsPerOp, 0) / runs.length),
+      allocsPerOp: Math.round(
+        runs.reduce((s, r) => s + r.allocsPerOp, 0) / runs.length,
+      ),
       msPerOp: runs.reduce((s, r) => s + r.msPerOp, 0) / runs.length,
     }
     result.set(name, avg)
@@ -131,28 +166,100 @@ interface MatchedPair {
   tsName: string
 }
 
+// tsName uses vitest's "describe > bench" naming. Each bench has its own describe now.
+// vitest fullName: "filepath > describeName" — we strip filepath in parsing.
 const MATCHES: MatchedPair[] = [
-  { category: 'Multicall', label: 'Single getReserves', goName: 'BenchmarkMulticallSingle', tsName: 'multicall: single getReserves' },
-  { category: 'Multicall', label: 'Batch 10', goName: 'BenchmarkMulticallBatch/batch_10', tsName: 'multicall: batch 10 getReserves' },
-  { category: 'Multicall', label: 'Batch 50', goName: 'BenchmarkMulticallBatch/batch_50', tsName: 'multicall: batch 50 getReserves' },
-  { category: 'Multicall', label: 'Batch 100', goName: 'BenchmarkMulticallBatch/batch_100', tsName: 'multicall: batch 100 getReserves' },
-  { category: 'Multicall', label: 'Batch 200', goName: 'BenchmarkMulticallBatch/batch_200', tsName: 'multicall: batch 200 getReserves' },
-  { category: 'Event Decoding', label: 'Single Sync decode', goName: 'BenchmarkDecodeSyncEvent', tsName: 'decodeEventLog: single Sync event' },
-  { category: 'Event Decoding', label: 'Batch 1000 Sync decode', goName: 'BenchmarkDecodeSyncEventBatch', tsName: 'decodeEventLog: batch 1000 Sync events' },
-  { category: 'Factory Sync', label: 'Chunk 50', goName: 'BenchmarkFactorySyncChunks/chunk_50', tsName: 'factory sync: chunk 50 (addrs+info)' },
-  { category: 'Factory Sync', label: 'Chunk 100', goName: 'BenchmarkFactorySyncChunks/chunk_100', tsName: 'factory sync: chunk 100 (addrs+info)' },
-  { category: 'Factory Sync', label: 'Chunk 500', goName: 'BenchmarkFactorySyncChunks/chunk_500', tsName: 'factory sync: chunk 500 (addrs+info)' },
-  { category: 'JSON Serialization', label: '100 pools', goName: 'BenchmarkPoolSerializationJSON/pools_100', tsName: 'JSON.stringify: 100 pools' },
-  { category: 'JSON Serialization', label: '1,000 pools', goName: 'BenchmarkPoolSerializationJSON/pools_1000', tsName: 'JSON.stringify: 1000 pools' },
-  { category: 'JSON Serialization', label: '5,000 pools', goName: 'BenchmarkPoolSerializationJSON/pools_5000', tsName: 'JSON.stringify: 5000 pools' },
-  { category: 'JSON Serialization', label: '10,000 pools', goName: 'BenchmarkPoolSerializationJSON/pools_10000', tsName: 'JSON.stringify: 10000 pools' },
+  {
+    category: 'Multicall',
+    label: 'Single getReserves',
+    goName: 'BenchmarkMulticallSingle',
+    tsName: 'BenchmarkMulticallSingle > single getReserves',
+  },
+  {
+    category: 'Multicall',
+    label: 'Batch 10',
+    goName: 'BenchmarkMulticallBatch/batch_10',
+    tsName: 'BenchmarkMulticallBatch/batch_10 > batch_10',
+  },
+  {
+    category: 'Multicall',
+    label: 'Batch 50',
+    goName: 'BenchmarkMulticallBatch/batch_50',
+    tsName: 'BenchmarkMulticallBatch/batch_50 > batch_50',
+  },
+  {
+    category: 'Multicall',
+    label: 'Batch 100',
+    goName: 'BenchmarkMulticallBatch/batch_100',
+    tsName: 'BenchmarkMulticallBatch/batch_100 > batch_100',
+  },
+  {
+    category: 'Multicall',
+    label: 'Batch 200',
+    goName: 'BenchmarkMulticallBatch/batch_200',
+    tsName: 'BenchmarkMulticallBatch/batch_200 > batch_200',
+  },
+  {
+    category: 'Event Decoding',
+    label: 'Single Sync decode',
+    goName: 'BenchmarkDecodeSyncEvent',
+    tsName: 'BenchmarkDecodeSyncEvent > single decode',
+  },
+  {
+    category: 'Event Decoding',
+    label: 'Batch 1000 Sync decode',
+    goName: 'BenchmarkDecodeSyncEventBatch',
+    tsName: 'BenchmarkDecodeSyncEventBatch > batch 1000 decodes',
+  },
+  {
+    category: 'Factory Sync',
+    label: 'Chunk 50',
+    goName: 'BenchmarkFactorySyncChunks/chunk_50',
+    tsName: 'BenchmarkFactorySyncChunks/chunk_50 > chunk_50',
+  },
+  {
+    category: 'Factory Sync',
+    label: 'Chunk 100',
+    goName: 'BenchmarkFactorySyncChunks/chunk_100',
+    tsName: 'BenchmarkFactorySyncChunks/chunk_100 > chunk_100',
+  },
+  {
+    category: 'Factory Sync',
+    label: 'Chunk 500',
+    goName: 'BenchmarkFactorySyncChunks/chunk_500',
+    tsName: 'BenchmarkFactorySyncChunks/chunk_500 > chunk_500',
+  },
+  {
+    category: 'JSON Serialization',
+    label: '100 pools',
+    goName: 'BenchmarkPoolSerializationJSON/pools_100',
+    tsName: 'BenchmarkPoolSerializationJSON/pools_100 > pools_100',
+  },
+  {
+    category: 'JSON Serialization',
+    label: '1,000 pools',
+    goName: 'BenchmarkPoolSerializationJSON/pools_1000',
+    tsName: 'BenchmarkPoolSerializationJSON/pools_1000 > pools_1000',
+  },
+  {
+    category: 'JSON Serialization',
+    label: '5,000 pools',
+    goName: 'BenchmarkPoolSerializationJSON/pools_5000',
+    tsName: 'BenchmarkPoolSerializationJSON/pools_5000 > pools_5000',
+  },
+  {
+    category: 'JSON Serialization',
+    label: '10,000 pools',
+    goName: 'BenchmarkPoolSerializationJSON/pools_10000',
+    tsName: 'BenchmarkPoolSerializationJSON/pools_10000 > pools_10000',
+  },
 ]
 
 // ─── SVG Chart Generation ───────────────────────────────────────────────────
 
 const COLORS = {
-  go: '#00ADD8',      // Go blue
-  ts: '#3178C6',      // TypeScript blue
+  go: '#00ADD8', // Go blue
+  ts: '#3178C6', // TypeScript blue
   goBg: '#00ADD820',
   tsBg: '#3178C620',
   grid: '#e5e7eb',
@@ -209,7 +316,7 @@ function generateBarChart(opts: {
   for (let i = 0; i <= gridCount; i++) {
     const x = marginLeft + (i / gridCount) * chartW
     const rawVal = logScale
-      ? Math.pow(10, (i / gridCount) * maxVal) - 1
+      ? 10 ** ((i / gridCount) * maxVal) - 1
       : (i / gridCount) * rawMax
     gridLines += `<line x1="${x}" y1="${marginTop}" x2="${x}" y2="${marginTop + chartH}" stroke="${COLORS.grid}" stroke-width="1"/>\n`
     gridLines += `<text x="${x}" y="${H - marginBottom + 20}" text-anchor="middle" fill="${COLORS.lightText}" font-size="11">${fmt(rawVal)}</text>\n`
@@ -268,10 +375,22 @@ function generateWinnerChart(rows: ComparisonRow[]): string {
   const cy = H / 2 + 10
   const r = 100
 
-  function arc(startAngle: number, endAngle: number, color: string, label: string, count: number): string {
+  function arc(
+    startAngle: number,
+    endAngle: number,
+    color: string,
+    label: string,
+    count: number,
+  ): string {
     if (count === 0) return ''
-    const start = { x: cx + r * Math.cos(startAngle), y: cy + r * Math.sin(startAngle) }
-    const end = { x: cx + r * Math.cos(endAngle), y: cy + r * Math.sin(endAngle) }
+    const start = {
+      x: cx + r * Math.cos(startAngle),
+      y: cy + r * Math.sin(startAngle),
+    }
+    const end = {
+      x: cx + r * Math.cos(endAngle),
+      y: cy + r * Math.sin(endAngle),
+    }
     const largeArc = endAngle - startAngle > Math.PI ? 1 : 0
     const midAngle = (startAngle + endAngle) / 2
     const labelR = r + 30
@@ -321,11 +440,27 @@ function main() {
 
   // Parse
   const goRaw = readFileSync(GO_BENCH_PATH, 'utf-8')
-  const tsResults: TsBenchEntry[] = JSON.parse(readFileSync(TS_RESULTS_PATH, 'utf-8'))
+  const vitestOutput: VitestBenchOutput = JSON.parse(
+    readFileSync(TS_RESULTS_PATH, 'utf-8'),
+  )
   const { benches: goBenches, memory: goMemory, cpu } = parseGoBench(goRaw)
   const goAvg = averageGoRuns(goBenches)
+
+  // Flatten vitest bench results: "GroupName > benchName" as key
+  // vitest fullName includes file path prefix: "bench/ts/viem.bench.ts > GroupName"
+  // Strip it to get just the group name for matching
   const tsMap = new Map<string, TsBenchEntry>()
-  for (const e of tsResults) tsMap.set(e.name, e)
+  for (const file of vitestOutput.files) {
+    for (const group of file.groups) {
+      // Extract just the group name (last segment after " > " in fullName)
+      const parts = group.fullName.split(' > ')
+      const groupName = parts[parts.length - 1]
+      for (const b of group.benchmarks) {
+        const key = `${groupName} > ${b.name}`
+        tsMap.set(key, { name: key, avgMsPerOp: b.mean, hz: b.hz })
+      }
+    }
+  }
 
   // Build comparison rows
   const rows: ComparisonRow[] = []
@@ -336,10 +471,14 @@ function main() {
 
     const goMs = go.msPerOp
     const tsMs = ts.avgMsPerOp
-    const ratio = goMs > 0 && tsMs > 0 ? Math.max(goMs, tsMs) / Math.min(goMs, tsMs) : 1
-    const winner: 'Go' | 'TypeScript' | 'Tie' = Math.abs(goMs - tsMs) / Math.max(goMs, tsMs) < 0.05
-      ? 'Tie'
-      : goMs < tsMs ? 'Go' : 'TypeScript'
+    const ratio =
+      goMs > 0 && tsMs > 0 ? Math.max(goMs, tsMs) / Math.min(goMs, tsMs) : 1
+    const winner: 'Go' | 'TypeScript' | 'Tie' =
+      Math.abs(goMs - tsMs) / Math.max(goMs, tsMs) < 0.05
+        ? 'Tie'
+        : goMs < tsMs
+          ? 'Go'
+          : 'TypeScript'
     const speedup = winner === 'Tie' ? '~1.0x' : `${ratio.toFixed(1)}x`
 
     rows.push({
@@ -351,7 +490,7 @@ function main() {
       speedup: `${winner === 'Tie' ? '' : winner + ' '}${speedup}`,
       goAllocsPerOp: go.allocsPerOp,
       goBytesPerOp: go.bytesPerOp,
-      tsHeapMB: ts.heapMB,
+      tsHeapMB: 0, // vitest doesn't report heap per bench
     })
   }
 
@@ -415,14 +554,22 @@ function main() {
   )
 
   // 5. Winner pie chart
-  writeFileSync(resolve(CHARTS_DIR, 'winner-breakdown.svg'), generateWinnerChart(rows))
+  writeFileSync(
+    resolve(CHARTS_DIR, 'winner-breakdown.svg'),
+    generateWinnerChart(rows),
+  )
 
   // ─── Generate Markdown Report ───────────────────────────────────────
 
   const goWins = rows.filter((r) => r.winner === 'Go').length
   const tsWins = rows.filter((r) => r.winner === 'TypeScript').length
   const ties = rows.filter((r) => r.winner === 'Tie').length
-  const overallWinner = goWins > tsWins ? 'Go (viem-go)' : goWins < tsWins ? 'TypeScript (viem)' : 'Tied'
+  const overallWinner =
+    goWins > tsWins
+      ? 'Go (viem-go)'
+      : goWins < tsWins
+        ? 'TypeScript (viem)'
+        : 'Tied'
 
   function fmtMs(ms: number): string {
     if (ms >= 1000) return `${(ms / 1000).toFixed(2)}s`
@@ -464,7 +611,7 @@ function main() {
 
   // Category -> chart filename mapping (must match the filenames written above)
   const chartFileMap: Record<string, string> = {
-    'Multicall': 'multicall-latency',
+    Multicall: 'multicall-latency',
     'Event Decoding': 'event-decoding',
     'Factory Sync': 'factory-sync',
     'JSON Serialization': 'json-serialization',
@@ -474,7 +621,8 @@ function main() {
   const categories = [...new Set(rows.map((r) => r.category))]
   for (const cat of categories) {
     const catRows = rows.filter((r) => r.category === cat)
-    const chartFile = chartFileMap[cat] ?? cat.toLowerCase().replace(/\s+/g, '-')
+    const chartFile =
+      chartFileMap[cat] ?? cat.toLowerCase().replace(/\s+/g, '-')
 
     md += `### ${cat}
 
@@ -601,11 +749,8 @@ function main() {
     md += `**Go**: ${goMem.memoryMB.toFixed(2)} MB for ${goMem.poolCount.toLocaleString()} pools (~${goMem.kbPerPool.toFixed(2)} KB/pool)\n`
   }
 
-  // Check TS memory from the last result entry
-  const tsMemEntry = tsResults[tsResults.length - 1]
-  if (tsMemEntry) {
-    md += `**TypeScript**: ${tsMemEntry.heapMB.toFixed(2)} MB heap at end of benchmark run\n`
-  }
+  // vitest bench doesn't report heap usage per benchmark
+  md += `**TypeScript**: heap stats not available (vitest bench does not report per-benchmark memory)\n`
 
   md += `
 > **Note**: Memory comparisons are approximate. Go reports heap allocations via \`runtime.MemStats\`, while TS reports \`process.memoryUsage().heapUsed\`. The TS number includes all benchmark overhead in the same process.
@@ -625,8 +770,16 @@ function main() {
     const catRows = rows.filter((r) => r.category === cat)
     const catGoWins = catRows.filter((r) => r.winner === 'Go').length
     const catTsWins = catRows.filter((r) => r.winner === 'TypeScript').length
-    const catWinner = catGoWins > catTsWins ? 'Go' : catGoWins < catTsWins ? 'TypeScript' : 'Mixed'
-    const margin = catGoWins === catTsWins ? '-' : `${Math.max(catGoWins, catTsWins)}/${catRows.length} benchmarks`
+    const catWinner =
+      catGoWins > catTsWins
+        ? 'Go'
+        : catGoWins < catTsWins
+          ? 'TypeScript'
+          : 'Mixed'
+    const margin =
+      catGoWins === catTsWins
+        ? '-'
+        : `${Math.max(catGoWins, catTsWins)}/${catRows.length} benchmarks`
     md += `| ${cat} | ${winnerEmoji(catWinner)} ${catWinner} | ${margin} |\n`
   }
 
@@ -661,7 +814,14 @@ function main() {
   // ─── Write outputs ──────────────────────────────────────────────
 
   writeFileSync(resolve(OUT_DIR, 'comparison.md'), md)
-  writeFileSync(resolve(OUT_DIR, 'comparison.json'), JSON.stringify({ cpu, rows, goMemory, summary: { goWins, tsWins, ties, overallWinner } }, null, 2))
+  writeFileSync(
+    resolve(OUT_DIR, 'comparison.json'),
+    JSON.stringify(
+      { cpu, rows, goMemory, summary: { goWins, tsWins, ties, overallWinner } },
+      null,
+      2,
+    ),
+  )
 
   // ─── Console summary ───────────────────────────────────────────
 
@@ -674,11 +834,20 @@ function main() {
   console.log(`  Overall: ${overallWinner}\n`)
 
   console.log('  ' + '-'.repeat(66))
-  console.log(`  ${'Benchmark'.padEnd(30)} ${'Go'.padEnd(12)} ${'TS'.padEnd(12)} Winner`)
+  console.log(
+    `  ${'Benchmark'.padEnd(30)} ${'Go'.padEnd(12)} ${'TS'.padEnd(12)} Winner`,
+  )
   console.log('  ' + '-'.repeat(66))
   for (const r of rows) {
-    const w = r.winner === 'Go' ? '\x1b[36mGo\x1b[0m' : r.winner === 'TypeScript' ? '\x1b[35mTS\x1b[0m' : 'Tie'
-    console.log(`  ${r.benchmark.padEnd(30)} ${fmtMs(r.goAvgMs).padEnd(12)} ${fmtMs(r.tsAvgMs).padEnd(12)} ${w}`)
+    const w =
+      r.winner === 'Go'
+        ? '\x1b[36mGo\x1b[0m'
+        : r.winner === 'TypeScript'
+          ? '\x1b[35mTS\x1b[0m'
+          : 'Tie'
+    console.log(
+      `  ${r.benchmark.padEnd(30)} ${fmtMs(r.goAvgMs).padEnd(12)} ${fmtMs(r.tsAvgMs).padEnd(12)} ${w}`,
+    )
   }
   console.log('  ' + '-'.repeat(66))
 

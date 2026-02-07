@@ -14,6 +14,7 @@ export type ExtractorConfig = {
   cacheDir: string
   logType?: LogFilterType
   logDepth: number
+  maxPools?: number // 0 or undefined = unlimited; >0 = stop background sync after this many pools
   logging?: boolean
   debug?: boolean
 }
@@ -53,6 +54,7 @@ export class Extractor {
       args.cacheDir,
       this.logFilter,
       this.tokenManager,
+      args.maxPools ?? 0,
     )
   }
 

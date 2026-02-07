@@ -19,8 +19,8 @@ import {
 import { mainnet } from 'viem/chains'
 import {
   factoryAbi,
-  uniswapV2PairAbi,
   UniV2EventsListenAbi,
+  uniswapV2PairAbi,
 } from '../../mini-extractor-ts/lib/abi.js'
 
 // ─── Shared Bench Config ─────────────────────────────────────────────────────
@@ -46,7 +46,6 @@ const client: PublicClient = createPublicClient({
   chain: mainnet,
   transport: http(RPC_URL),
   batch: { multicall: { batchSize: 2048, wait: 16 } },
-  pollingInterval: 200,
 })
 
 // ─── Bench Harness ───────────────────────────────────────────────────────────

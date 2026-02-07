@@ -3,7 +3,7 @@ module github.com/ChefBingbong/mini-extractor-go
 go 1.24.0
 
 require (
-	github.com/ChefBingbong/viem-go v0.0.17-0.20260207010111-f655e6012100
+	github.com/ChefBingbong/viem-go v0.0.18
 	github.com/ethereum/go-ethereum v1.16.8
 	golang.org/x/crypto v0.47.0
 )

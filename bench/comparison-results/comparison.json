@@ -4,178 +4,168 @@
     {
       "category": "Multicall",
       "benchmark": "Single getReserves",
-      "goAvgMs": 69.94459866666666,
-      "tsAvgMs": 71.75239021896515,
-      "winner": "Tie",
-      "speedup": "~1.0x",
-      "goAllocsPerOp": 291,
-      "goBytesPerOp": 28570.333333333332,
-      "tsHeapMB": 6.15
+      "goAvgMs": 65.965022,
+      "tsAvgMs": 73.04709011627907,
+      "winner": "Go",
+      "speedup": "Go 1.1x",
+      "goAllocsPerOp": 190,
+      "goBytesPerOp": 19410,
+      "tsHeapMB": 0
     },
     {
       "category": "Multicall",
       "benchmark": "Batch 10",
-      "goAvgMs": 74.36708633333332,
-      "tsAvgMs": 71.00998996794635,
+      "goAvgMs": 69.009728,
+      "tsAvgMs": 71.05987211627911,
       "winner": "Tie",
       "speedup": "~1.0x",
-      "goAllocsPerOp": 831,
-      "goBytesPerOp": 162861.33333333334,
-      "tsHeapMB": 6.43
+      "goAllocsPerOp": 696,
+      "goBytesPerOp": 144747,
+      "tsHeapMB": 0
     },
     {
       "category": "Multicall",
       "benchmark": "Batch 50",
-      "goAvgMs": 74.60553566666668,
-      "tsAvgMs": 93.53288683832609,
+      "goAvgMs": 77.086657,
+      "tsAvgMs": 86.4812095142856,
       "winner": "Go",
-      "speedup": "Go 1.3x",
-      "goAllocsPerOp": 3138,
-      "goBytesPerOp": 574149.6666666666,
-      "tsHeapMB": 16.5
+      "speedup": "Go 1.1x",
+      "goAllocsPerOp": 2848,
+      "goBytesPerOp": 545306,
+      "tsHeapMB": 0
     },
     {
       "category": "Multicall",
       "benchmark": "Batch 100",
-      "goAvgMs": 83.60794966666667,
-      "tsAvgMs": 220.0551260555557,
+      "goAvgMs": 75.307002,
+      "tsAvgMs": 326.57340419999963,
       "winner": "Go",
-      "speedup": "Go 2.6x",
-      "goAllocsPerOp": 6003,
-      "goBytesPerOp": 1086227,
-      "tsHeapMB": 9.37
+      "speedup": "Go 4.3x",
+      "goAllocsPerOp": 5500,
+      "goBytesPerOp": 991640,
+      "tsHeapMB": 0
     },
     {
       "category": "Multicall",
       "benchmark": "Batch 200",
-      "goAvgMs": 97.59878933333334,
-      "tsAvgMs": 345.5027967205387,
+      "goAvgMs": 90.725886,
+      "tsAvgMs": 285.2149204545456,
       "winner": "Go",
-      "speedup": "Go 3.5x",
-      "goAllocsPerOp": 11725,
-      "goBytesPerOp": 2054157.6666666667,
-      "tsHeapMB": 11.04
+      "speedup": "Go 3.1x",
+      "goAllocsPerOp": 10820,
+      "goBytesPerOp": 1937133,
+      "tsHeapMB": 0
     },
     {
       "category": "Event Decoding",
       "benchmark": "Single Sync decode",
-      "goAvgMs": 0.00023826666666666667,
-      "tsAvgMs": 0.002177594086167032,
+      "goAvgMs": 0.0001527,
+      "tsAvgMs": 0.0017431023386634524,
       "winner": "Go",
-      "speedup": "Go 9.1x",
+      "speedup": "Go 11.4x",
       "goAllocsPerOp": 5,
       "goBytesPerOp": 272,
-      "tsHeapMB": 13.67
+      "tsHeapMB": 0
     },
     {
       "category": "Event Decoding",
       "benchmark": "Batch 1000 Sync decode",
-      "goAvgMs": 0.20021600000000003,
-      "tsAvgMs": 2.1602244094766627,
+      "goAvgMs": 0.165893,
+      "tsAvgMs": 1.7740199970449206,
       "winner": "Go",
-      "speedup": "Go 10.8x",
+      "speedup": "Go 10.7x",
       "goAllocsPerOp": 5000,
-      "goBytesPerOp": 272001.3333333333,
-      "tsHeapMB": 13.66
+      "goBytesPerOp": 272001,
+      "tsHeapMB": 0
     },
     {
       "category": "Factory Sync",
       "benchmark": "Chunk 50",
-      "goAvgMs": 156.85338333333334,
-      "tsAvgMs": 346.36288934554346,
+      "goAvgMs": 141.18446,
+      "tsAvgMs": 311.0546082000004,
       "winner": "Go",
       "speedup": "Go 2.2x",
-      "goAllocsPerOp": 11112,
-      "goBytesPerOp": 2057992.3333333333,
-      "tsHeapMB": 18.17
+      "goAllocsPerOp": 10112,
+      "goBytesPerOp": 1917883,
+      "tsHeapMB": 0
     },
     {
       "category": "Factory Sync",
       "benchmark": "Chunk 100",
-      "goAvgMs": 221.84823966666667,
-      "tsAvgMs": 283.72495581818197,
+      "goAvgMs": 220.381767,
+      "tsAvgMs": 482.7697249000004,
       "winner": "Go",
-      "speedup": "Go 1.3x",
-      "goAllocsPerOp": 21653,
-      "goBytesPerOp": 4120195,
-      "tsHeapMB": 6.96
+      "speedup": "Go 2.2x",
+      "goAllocsPerOp": 19842,
+      "goBytesPerOp": 3829553,
+      "tsHeapMB": 0
     },
     {
       "category": "Factory Sync",
       "benchmark": "Chunk 500",
-      "goAvgMs": 764.283198,
-      "tsAvgMs": 935.2721621944438,
+      "goAvgMs": 743.508817,
+      "tsAvgMs": 2302.068966399999,
       "winner": "Go",
-      "speedup": "Go 1.2x",
-      "goAllocsPerOp": 106406,
-      "goBytesPerOp": 19970985.333333332,
-      "tsHeapMB": 40.39
+      "speedup": "Go 3.1x",
+      "goAllocsPerOp": 97980,
+      "goBytesPerOp": 18974422,
+      "tsHeapMB": 0
     },
     {
       "category": "JSON Serialization",
       "benchmark": "100 pools",
-      "goAvgMs": 0.05244066666666666,
-      "tsAvgMs": 0.0283392361749008,
+      "goAvgMs": 0.053355,
+      "tsAvgMs": 0.04811127942778129,
       "winner": "TypeScript",
-      "speedup": "TypeScript 1.9x",
+      "speedup": "TypeScript 1.1x",
       "goAllocsPerOp": 10,
-      "goBytesPerOp": 41282.666666666664,
-      "tsHeapMB": 17.15
+      "goBytesPerOp": 41286,
+      "tsHeapMB": 0
     },
     {
       "category": "JSON Serialization",
       "benchmark": "1,000 pools",
-      "goAvgMs": 0.5230723333333333,
-      "tsAvgMs": 0.2272697156087382,
+      "goAvgMs": 0.567904,
+      "tsAvgMs": 0.5390329435860342,
       "winner": "TypeScript",
-      "speedup": "TypeScript 2.3x",
+      "speedup": "TypeScript 1.1x",
       "goAllocsPerOp": 10,
-      "goBytesPerOp": 385756.6666666667,
-      "tsHeapMB": 26.42
+      "goBytesPerOp": 385808,
+      "tsHeapMB": 0
     },
     {
       "category": "JSON Serialization",
       "benchmark": "5,000 pools",
-      "goAvgMs": 2.5397103333333333,
-      "tsAvgMs": 1.4547693818527845,
-      "winner": "TypeScript",
-      "speedup": "TypeScript 1.7x",
+      "goAvgMs": 2.679765,
+      "tsAvgMs": 2.7495835027474484,
+      "winner": "Tie",
+      "speedup": "~1.0x",
       "goAllocsPerOp": 10,
-      "goBytesPerOp": 1910267.6666666667,
-      "tsHeapMB": 14.15
+      "goBytesPerOp": 1911606,
+      "tsHeapMB": 0
     },
     {
       "category": "JSON Serialization",
       "benchmark": "10,000 pools",
-      "goAvgMs": 6.810928,
-      "tsAvgMs": 3.290694767381583,
-      "winner": "TypeScript",
-      "speedup": "TypeScript 2.1x",
+      "goAvgMs": 5.092468,
+      "tsAvgMs": 5.611093788785032,
+      "winner": "Go",
+      "speedup": "Go 1.1x",
       "goAllocsPerOp": 10,
-      "goBytesPerOp": 3813457,
-      "tsHeapMB": 47.36
+      "goBytesPerOp": 3813629,
+      "tsHeapMB": 0
     }
   ],
   "goMemory": [
     {
       "poolCount": 10000,
-      "memoryMB": 0.03,
-      "kbPerPool": 0.003072
-    },
-    {
-      "poolCount": 10000,
       "memoryMB": 0.02,
       "kbPerPool": 0.002048
-    },
-    {
-      "poolCount": 10000,
-      "memoryMB": 0.01,
-      "kbPerPool": 0.001024
     }
   ],
   "summary": {
-    "goWins": 8,
-    "tsWins": 4,
+    "goWins": 10,
+    "tsWins": 2,
     "ties": 2,
     "overallWinner": "Go (viem-go)"
   }

@@ -1,34 +1,229 @@
-# viem vs viem-go: Extractor Performance Comparison
+# viem-go: A Go Implementation of viem
 
-A side-by-side benchmark comparing [viem](https://viem.sh/) (TypeScript/Bun) and [viem-go](https://github.com/ChefBingbong/viem-go) (Go) by running identical UniswapV2 pool extractor applications against the same RPC endpoint.
+[viem-go](https://github.com/ChefBingbong/viem-go) brings the developer experience of [viem](https://viem.sh/) to Go. This repository demonstrates that by building the **same UniswapV2 pool extractor** in both TypeScript (viem) and Go (viem-go) — the APIs, patterns, and architecture are nearly identical.
 
-Both extractors do the same work: sync pool data from on-chain UniswapV2 factories via multicall, decode Sync events from block logs, resolve ERC-20 token metadata, and serve the pool state over an HTTP API.
+## Why viem-go?
 
-## Prerequisites
+If you've used viem in TypeScript, you already know viem-go. The library mirrors viem's client model, action-based API, multicall batching, chain definitions, and transport layer — so the mental model transfers directly. You write the same logic, with the same structure, in Go.
+
+---
+
+## Side-by-Side: The Same Extractor in Both Languages
+
+Both extractors do identical work: create a public client, sync UniswapV2 pools via multicall, watch blocks for Sync events, resolve ERC-20 token metadata, and serve the data over HTTP.
+
+### Creating a Public Client
+
+**TypeScript (viem)**
+```typescript
+import { createPublicClient, http } from 'viem'
+import { mainnet } from 'viem/chains'
+
+const client = createPublicClient({
+  chain: mainnet,
+  transport: http(RPC_URL),
+  batch: { multicall: { batchSize: 2048, wait: 16 } },
+  pollingInterval: 200,
+})
+```
+
+**Go (viem-go)**
+```go
+import (
+    "github.com/ChefBingbong/viem-go/chain/definitions"
+    "github.com/ChefBingbong/viem-go/client"
+    "github.com/ChefBingbong/viem-go/client/transport"
+)
+
+c, _ := client.CreatePublicClient(client.PublicClientConfig{
+    Chain:     &definitions.Mainnet,
+    Transport: transport.HTTP(rpcURL),
+    Batch: &client.BatchOptions{
+        Multicall: &client.MulticallBatchOptions{
+            BatchSize: 2048,
+            Wait:      16 * time.Millisecond,
+        },
+    },
+    PollingInterval: 200 * time.Millisecond,
+})
+```
+
+The config shape is the same: `chain`, `transport`, `batch.multicall`, `pollingInterval`. The only difference is Go's explicit types.
+
+### Multicall — Batched Contract Reads
+
+**TypeScript (viem)**
+```typescript
+const results = await client.multicall({
+  contracts: [
+    { address: pairAddr, abi: uniswapV2PairAbi, functionName: 'getReserves' },
+    { address: pairAddr, abi: uniswapV2PairAbi, functionName: 'token0' },
+    { address: pairAddr, abi: uniswapV2PairAbi, functionName: 'token1' },
+  ],
+  allowFailure: true,
+})
+
+if (results[0].status === 'success') {
+  const [r0, r1] = results[0].result
+}
+```
+
+**Go (viem-go)**
+```go
+results, _ := public.Multicall(ctx, c, public.MulticallParameters{
+    Contracts: []public.MulticallContract{
+        {Address: pairAddr, ABI: pairABI, FunctionName: "getReserves"},
+        {Address: pairAddr, ABI: pairABI, FunctionName: "token0"},
+        {Address: pairAddr, ABI: pairABI, FunctionName: "token1"},
+    },
+    AllowFailure: boolPtr(true),
+})
+
+if results[0].Status == "success" {
+    vals := results[0].Result.([]any)
+    r0, r1 := vals[0].(*big.Int), vals[1].(*big.Int)
+}
+```
+
+Same `contracts` array, same `allowFailure` flag, same `status`/`result` pattern. viem-go batches these into a single `eth_call` to `Multicall3` just like viem does.
+
+### Token Resolution via Multicall
+
+**TypeScript (viem)**
+```typescript
+const results = await this.client.multicall({
+  contracts: [
+    { address, abi: erc20Abi, functionName: 'decimals' },
+    { address, abi: erc20Abi, functionName: 'symbol' },
+    { address, abi: erc20Abi, functionName: 'name' },
+  ],
+  allowFailure: true,
+})
+
+if (decimalsR.status === 'failure') return
+if (symbolR.status === 'failure' || nameR.status === 'failure') {
+  // bytes32 fallback
+}
+```
+
+**Go (viem-go)**
+```go
+results, _ := public.MulticallConcurrent(ctx, tm.client, public.MulticallParameters{
+    Contracts: []public.MulticallContract{
+        {Address: address, ABI: erc20ABI, FunctionName: "decimals"},
+        {Address: address, ABI: erc20ABI, FunctionName: "symbol"},
+        {Address: address, ABI: erc20ABI, FunctionName: "name"},
+    },
+    AllowFailure: boolPtr(true),
+})
+
+if decimalsR.Status == "failure" { return nil, nil }
+if symbolR.Status == "failure" || nameR.Status == "failure" {
+    // bytes32 fallback
+}
+```
+
+Identical logic: multicall 3 ERC-20 reads, check for failures, fall back to bytes32 ABI. viem-go even has `MulticallConcurrent` which automatically batches concurrent goroutine calls into fewer RPC requests — the Go equivalent of viem's request deduplication.
+
+### Sync Event Processing
+
+**TypeScript (viem)**
+```typescript
+logFilter.addFilter(UniV2EventsListenAbi, (logs?: Log[]) => {
+  logs.forEach((l) => {
+    const { args: { reserve0, reserve1 } } = decodeEventLog({
+      abi: UniV2EventsListenAbi, data: l.data, topics: l.topics,
+    })
+    const pool = this.poolMap.get(l.address.toLowerCase())
+    if (pool) {
+      pool.reserve0 = reserve0
+      pool.reserve1 = reserve1
+    }
+  })
+})
+```
+
+**Go (viem-go)**
+```go
+logFilter.AddFilter([]string{SyncEventTopic.Hex()}, func(logs []formatters.Log) {
+    for _, l := range logs {
+        reserve0, reserve1, _ := DecodeSyncEvent(l)
+        addrL := strings.ToLower(l.Address)
+
+        ext.poolMu.RLock()
+        pool, exists := ext.poolMap[addrL]
+        ext.poolMu.RUnlock()
+
+        if exists {
+            ext.poolMu.Lock()
+            pool.Reserve0 = reserve0
+            pool.Reserve1 = reserve1
+            ext.poolMu.Unlock()
+        }
+    }
+})
+```
+
+Same pattern: register a filter with topics, receive logs, decode the event, update the pool map. The Go version adds a mutex for thread safety since goroutines are truly concurrent (vs JS single-threaded event loop).
+
+### Extractor Architecture
+
+Both versions share the same component structure:
+
+| Component | TypeScript | Go |
+|-----------|-----------|-----|
+| Client | `PublicClient` from viem | `*client.PublicClient` from viem-go |
+| Extractor | `Extractor` class | `Extractor` struct |
+| Pool indexer | `UniV2Extractor` class | `UniV2Extractor` struct |
+| Token resolver | `TokenManager` class | `TokenManager` struct |
+| Block watcher | `LogFilter2` class | `LogFilter2` struct |
+| Cache | `PermanentCache<T>` | `PermanentCache[T]` (generics) |
+
+The file layout even mirrors:
+
+```
+mini-extractor-ts/              mini-extractor-go/
+├── config.ts                   ├── config.go
+├── index.ts                    ├── main.go
+├── extractor/                  ├── extractor/
+│   ├── Extractor.ts            │   ├── extractor.go
+│   ├── UniV2Extractor.ts       │   ├── univ2_extractor.go
+│   ├── LogFilter2.ts           │   ├── log_filter.go
+│   ├── TokenManager.ts         │   ├── token_manager.go
+│   ├── PermanentCache.ts       │   ├── permanent_cache.go
+│   └── UniV2Types.ts           │   └── univ2_types.go
+├── handlers/                   ├── handlers/
+│   └── extractor-insights.ts   │   └── extractor_insights.go
+└── lib/                        └── lib/
+    ├── logger.ts                   ├── logger.go
+    └── token.ts                    └── token.go
+```
+
+---
+
+## Setup
+
+### Prerequisites
 
 - [Bun](https://bun.sh/) (v1.3+)
 - [Go](https://go.dev/) (v1.24+)
 - [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) (for API load tests)
-- An Ethereum RPC URL (set in `.env`)
+- An Ethereum RPC URL
 
-## Setup
+### Install
 
 ```bash
-# 1. Clone and enter the project
-cd viem-go-extractor-demo
-
-# 2. Copy the env template and set your RPC URL
+# Copy env template and set your RPC URL
 cp .env.example .env
-# Edit .env and set RPC_URL=https://your-rpc-url
 
-# 3. Install TypeScript dependencies
+# Install TypeScript dependencies
 make install
 
-# 4. Verify Go dependencies
+# Verify Go dependencies
 cd mini-extractor-go && go mod tidy && cd ..
 ```
 
-## Running the Extractors
+### Run
 
 ```bash
 make ts              # Start TypeScript extractor only
@@ -36,53 +231,48 @@ make go              # Start Go extractor only
 make dev             # Start both in parallel
 ```
 
-## Running Benchmarks
+---
+
+## Benchmarks
 
 ### CPU / Library Microbenchmarks
 
-These benchmark the core viem library operations in isolation — no running services needed, just an RPC URL.
+Benchmark the core viem library operations in isolation — no running services needed, just an RPC URL.
 
 ```bash
-make bench-go        # Go benchmarks (benchtime=3s, count=3)
-make bench-ts        # TypeScript benchmarks (same config)
-make bench-compare   # Generate comparison report + charts
-make bench-all       # All three in sequence
+make bench-all       # Run Go + TS benchmarks + generate comparison report
 ```
 
-Both harnesses use identical configuration:
-- **benchtime**: 3 seconds per run (time-based, not fixed iterations)
-- **count**: 3 independent runs per benchmark
-- **warmup**: none (neither Go nor TS gets warmup iterations)
-
-Results are written to `bench/results/` and the comparison report to `bench/comparison-results/`.
+Both harnesses use identical config: `benchtime=3s`, `count=3`, `warmup=none`.
 
 ### k6 API Load Tests
 
-These test the HTTP endpoints under concurrent load. Both services must be running first.
+Test HTTP endpoints under concurrent load. Each service is tested independently (no interleaving).
 
 ```bash
-# Terminal 1: start both services
-make dev
-
-# Terminal 2: run k6 suites
-make k6-health       # /health endpoint (lightweight)
-make k6-insights     # /extractor-insights?limit=1000 (serializes pools)
-make k6-stress-ts    # Stress test TS (50 steady → 200 spike VUs)
-make k6-stress-go    # Stress test Go (50 steady → 200 spike VUs)
-make k6-compare      # Generate comparison report + charts
-make k6-all          # All five in sequence
+make dev             # Terminal 1: start both services
+make k6-all          # Terminal 2: run all k6 suites + comparison
 ```
 
-Both insights and stress tests use `?limit=1000` to ensure equal data volume regardless of how many pools each service has synced.
+All tests use `?limit=1000` to ensure equal data volume.
+
+### Regenerating Reports
+
+```bash
+make bench-compare   # CPU benchmark comparison
+make k6-compare      # k6 API comparison
+```
+
+Reports are written to `bench/comparison-results/` with SVG charts.
 
 ---
 
-## Benchmark Results
-
-> CPU: Apple M4 Pro | RPC: QuickNode Ethereum Mainnet
-> All results are averages across 3 independent runs
+<details>
+<summary><h2>Full Benchmark Results (click to expand)</h2></summary>
 
 ### CPU Benchmark Summary
+
+> CPU: Apple M4 Pro | RPC: QuickNode Ethereum Mainnet | 3 runs averaged
 
 ![Winner Breakdown](./bench/comparison-results/charts/winner-breakdown.svg)
 
@@ -96,9 +286,7 @@ Both insights and stress tests use `?limit=1000` to ensure equal data volume reg
 
 ---
 
-### 1. Multicall Performance
-
-Multicall batches multiple smart contract reads into a single RPC call. This is the core primitive both libraries use for all on-chain data fetching.
+#### Multicall Performance
 
 ![Multicall Latency](./bench/comparison-results/charts/multicall-latency.svg)
 
@@ -110,13 +298,11 @@ Multicall batches multiple smart contract reads into a single RPC call. This is 
 | 100 contracts | 83.6ms | 220.1ms | Go | 2.6x |
 | 200 contracts | 97.6ms | 345.5ms | Go | 3.5x |
 
-**Analysis**: At small batch sizes (1-10 contracts), both libraries are neck and neck — latency is dominated by the RPC round-trip. As batch size grows, Go's advantage becomes dramatic. At 200 contracts, Go is **3.5x faster**. This suggests viem's multicall encoding or response parsing has quadratic-ish overhead at larger batch sizes, whereas viem-go scales linearly. Since the real extractor batches up to 1048 contracts per multicall, this difference compounds significantly during factory sync.
+At small batch sizes both libraries are equal — latency is dominated by the RPC round-trip. As batch size grows, Go scales linearly while viem shows increasing overhead. At 200 contracts, Go is **3.5x faster**.
 
 ---
 
-### 2. Event Decoding
-
-Decoding Sync events from raw log data is a pure CPU operation with no I/O. This isolates the language runtime and library overhead.
+#### Event Decoding
 
 ![Event Decoding](./bench/comparison-results/charts/event-decoding.svg)
 
@@ -125,13 +311,11 @@ Decoding Sync events from raw log data is a pure CPU operation with no I/O. This
 | Single decode | 238 ns/op | 2,178 ns/op | Go **9.1x** faster |
 | 1000 decodes | 200 us | 2,160 us | Go **10.8x** faster |
 
-**Analysis**: Go is an order of magnitude faster at event decoding. Go's `DecodeSyncEvent` does direct byte slicing on the hex data (two `big.Int.SetBytes` calls), while viem's `decodeEventLog` performs full ABI schema lookup, topic matching, and typed decoding. In the real extractor, every block's Sync events flow through this path, so a 10x decode speedup translates to meaningfully lower CPU usage per block.
+Go's `DecodeSyncEvent` does direct byte slicing (two `big.Int.SetBytes` calls), while viem's `decodeEventLog` performs full ABI schema lookup and typed decoding. Go is an order of magnitude faster here.
 
 ---
 
-### 3. Factory Sync (On-Chain Data at Scale)
-
-This is the most representative benchmark — it simulates the actual `syncFactoryStreaming` hot path: fetch N pair addresses via `allPairs()`, then batch-fetch `token0`, `token1`, and `getReserves` for all of them.
+#### Factory Sync (On-Chain Data at Scale)
 
 ![Factory Sync](./bench/comparison-results/charts/factory-sync.svg)
 
@@ -141,13 +325,11 @@ This is the most representative benchmark — it simulates the actual `syncFacto
 | 100 pools | 222ms | 284ms | Go **1.3x** faster |
 | 500 pools | 764ms | 935ms | Go **1.2x** faster |
 
-**Analysis**: Go wins across all sizes, with the largest advantage at smaller chunks where the overhead-per-call ratio is highest. At 500 pools (which involves 2 multicalls — one for addresses, one for 1500 contract calls), Go saves ~170ms per batch. Over a full factory sync of 60,000+ pools, this advantage compounds to minutes of wall-clock difference.
+This simulates the real `syncFactoryStreaming` hot path: fetch pair addresses, then batch-fetch token0/token1/getReserves. Go wins at all sizes.
 
 ---
 
-### 4. JSON Serialization
-
-The `/extractor-insights` endpoint serializes the entire pool map to JSON. This benchmark measures pure serialization throughput at various pool counts.
+#### JSON Serialization
 
 ![JSON Serialization](./bench/comparison-results/charts/json-serialization.svg)
 
@@ -158,15 +340,15 @@ The `/extractor-insights` endpoint serializes the entire pool map to JSON. This 
 | 5,000 | 2.54ms | 1.45ms | TS **1.7x** faster |
 | 10,000 | 6.81ms | 3.29ms | TS **2.1x** faster |
 
-**Analysis**: TypeScript wins decisively here. Bun's `JSON.stringify` is consistently ~2x faster than Go's `encoding/json.Marshal`. This is one of Bun's marquee optimizations — its JSON serializer is written in Zig and heavily optimized for common patterns. Go's standard library `encoding/json` is known to be slower than alternatives like `sonic` or `go-json`; switching to one of those would likely close this gap.
+Bun's `JSON.stringify` (Zig-optimized) is consistently ~2x faster than Go's `encoding/json`. Switching Go to `sonic` or `go-json` would likely close this gap.
 
 ---
 
-## k6 API Load Test Results
+### k6 API Load Test Results
 
-All k6 tests use `?limit=1000` to ensure both services serialize the same data volume per request, regardless of how many pools each has synced.
+Each service is tested independently (no interleaving) with `?limit=1000`.
 
-### /health — Lightweight Endpoint
+#### /health — Lightweight Endpoint
 
 ![Health Latency](./bench/comparison-results/charts/k6-health-latency.svg)
 
@@ -177,7 +359,7 @@ All k6 tests use `?limit=1000` to ensure both services serialize the same data v
 | p95 | 84.6ms | 5.9ms | TS **14.3x** |
 | p99 | 162.3ms | 21.0ms | TS **7.7x** |
 
-### /extractor-insights — Heavy Endpoint
+#### /extractor-insights — Heavy Endpoint
 
 ![Insights Latency](./bench/comparison-results/charts/k6-insights-latency.svg)
 
@@ -188,9 +370,7 @@ All k6 tests use `?limit=1000` to ensure both services serialize the same data v
 | p95 | 151.5ms | 43.8ms | TS **3.5x** |
 | p99 | 354.8ms | 110.1ms | TS **3.2x** |
 
-Both services processed 29,934 requests with 3.4 GB transferred and 0% error rate.
-
-### Stress Test — 50 Steady to 200 Spike VUs
+#### Stress Test — 50 Steady to 200 Spike VUs
 
 ![Stress Latency](./bench/comparison-results/charts/k6-stress-latency.svg)
 
@@ -207,57 +387,40 @@ Both services processed 29,934 requests with 3.4 GB transferred and 0% error rat
 | Throughput | ~147 req/s | ~706 req/s |
 | Error rate | 0% | 0% |
 
-**Analysis**: TypeScript dominates the API load tests by a wide margin. Bun's event-loop-based HTTP server (Elysia on top of Bun's native server) handles concurrent connections extremely efficiently — its single-threaded async I/O model avoids goroutine scheduling overhead and delivers consistently low latency even under 200 concurrent users. Go's `net/http` with synchronous handler goroutines shows higher tail latency as concurrency increases. The 2x JSON serialization advantage for TS also compounds here since every response involves serializing 1000 pools.
-
-Note that Go's `net/http` performance could be improved by switching to a more optimized server like `fasthttp`, adding response caching, or using a faster JSON library (`sonic`, `go-json`).
+TypeScript (Bun/Elysia) dominates API serving. Its event-loop HTTP server handles concurrency more efficiently than Go's goroutine-per-connection `net/http`. Go's JSON serialization overhead (2x slower) compounds under load. Switching to `fasthttp` + `sonic` would likely close the gap.
 
 ---
 
-## Overall Verdict
+### Overall Verdict
 
 | Dimension | Winner | Key Insight |
 |-----------|--------|-------------|
-| **RPC Multicall** | Go | 3.5x faster at large batch sizes (200 contracts) |
-| **Event Decoding** | Go | 9-11x faster (compiled byte slicing vs ABI resolution) |
-| **Factory Sync** | Go | 1.2-2.2x faster end-to-end on-chain data pipeline |
-| **JSON Serialization** | TypeScript | 1.7-2.3x faster (Bun's Zig-optimized JSON) |
-| **HTTP API (low load)** | TypeScript | 12-36x lower latency on /health |
-| **HTTP API (high load)** | TypeScript | 5-7x lower latency, 4.8x higher throughput under stress |
+| **RPC Multicall** | Go | 3.5x faster at large batch sizes |
+| **Event Decoding** | Go | 9-11x faster (compiled vs interpreted) |
+| **Factory Sync** | Go | 1.2-2.2x faster data pipeline |
+| **JSON Serialization** | TypeScript | 1.7-2.3x faster (Bun's Zig JSON) |
+| **HTTP API** | TypeScript | 5-14x lower latency under load |
 
-### When to choose Go (viem-go)
+**Go** excels at the data pipeline (fetching, decoding, syncing on-chain data). **TypeScript** excels at the API layer (serving data under concurrent load). In production, the optimal architecture might be a Go indexer feeding a Bun/TS API server.
 
-- Your bottleneck is **on-chain data throughput** — syncing tens of thousands of pools, processing high event volumes
-- You need **predictable memory usage** and minimal GC pauses
-- You're building backend infrastructure where **CPU-bound decoding** dominates
-- You want a single compiled binary with no runtime dependencies
-
-### When to choose TypeScript (viem)
-
-- Your bottleneck is **API serving** — returning pool data to clients under concurrent load
-- You want the **most mature library** with the largest ecosystem, best documentation, and widest chain support
-- You need fast **JSON serialization** for large API responses
-- You're building a full-stack application where **developer velocity** matters
-- You want to leverage Bun's extremely fast HTTP server
-
-### The big picture
-
-Go (viem-go) is the better choice for the **data pipeline** — fetching, decoding, and processing on-chain data. TypeScript (viem) is the better choice for the **API layer** — serving that data to clients. In a production architecture, the optimal design might be a Go-based indexer feeding data into a Bun/TypeScript API server.
+</details>
 
 ---
 
-## Regenerating Results
+## Project Structure
 
-```bash
-# CPU benchmarks (no running services needed)
-make bench-all
-
-# k6 API load tests (start services first)
-make dev             # Terminal 1
-make k6-all          # Terminal 2
-
-# Regenerate reports from existing results
-make bench-compare
-make k6-compare
 ```
-
-All reports are written to `bench/comparison-results/`.
+viem-go-extractor-demo/
+├── mini-extractor-ts/       # TypeScript extractor (Bun + viem + Elysia)
+├── mini-extractor-go/       # Go extractor (viem-go + net/http)
+├── bench/
+│   ├── go/                  # Go microbenchmarks (testing.B)
+│   ├── ts/                  # TypeScript microbenchmarks
+│   ├── k6/                  # k6 API load test scripts
+│   ├── compare.ts           # CPU bench comparison + chart generator
+│   ├── compare-k6.ts        # k6 comparison + chart generator
+│   └── comparison-results/  # Generated reports + SVG charts
+├── .env                     # Shared environment (RPC_URL, ports, etc.)
+├── Makefile                 # All commands
+└── README.md
+```

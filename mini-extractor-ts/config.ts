@@ -28,4 +28,5 @@ export const EXTRACTOR_CONFIG: ExtractorConfig = {
   factoriesV2: [uniswapV2Factory],
   cacheDir: process.env.CACHE_DIR ?? './cache/ts-cache',
   logDepth: Number(process.env.LOG_DEPTH ?? 50),
+  maxPools: Number(process.env.MAX_POOLS ?? 1000),
 }

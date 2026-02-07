@@ -74,6 +74,7 @@ func MustLoadConfig() (*client.PublicClient, extractor.Config) {
 		CacheDir:    getEnv("CACHE_DIR", "./cache/go-cache"),
 		LogDepth:    getEnvInt("LOG_DEPTH", 50),
 		LogType:     extractor.LogFilterOneCall,
+		MaxPools:    getEnvInt("MAX_POOLS", 1000),
 	}
 
 	return c, cfg
