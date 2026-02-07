@@ -6,19 +6,17 @@
  *   k6 run --env TARGET_URL=http://localhost:8001 --env LABEL=ts bench/k6/stress.js
  *   k6 run --env TARGET_URL=http://localhost:8000 --env LABEL=go bench/k6/stress.js
  */
-import http from 'k6/http'
+
 import { check } from 'k6'
-import { Trend, Rate, Counter } from 'k6/metrics'
+import http from 'k6/http'
+import { Counter, Rate, Trend } from 'k6/metrics'
 
 const latency = new Trend('stress_latency', true)
 const errors = new Rate('stress_errors')
 const totalRequests = new Counter('stress_total_requests')
 const totalBytes = new Counter('stress_total_bytes')
 
-const TARGET_URL = __ENV.TARGET_URL
-if (!TARGET_URL) {
-  throw new Error('TARGET_URL env var is required (e.g. --env TARGET_URL=http://localhost:8000)')
-}
+const TARGET_URL = __ENV.TARGET_URL || 'http://localhost:8000'
 const POOL_LIMIT = __ENV.POOL_LIMIT || '1000'
 const LABEL = __ENV.LABEL || 'unknown'
 
@@ -60,7 +58,11 @@ export default function () {
     'status 200': (r) => r.status === 200,
     'latency < 5s': (r) => r.timings.duration < 5000,
     'body has pools': (r) => {
-      try { return JSON.parse(r.body).totalPools >= 0 } catch { return false }
+      try {
+        return JSON.parse(r.body).totalPools >= 0
+      } catch {
+        return false
+      }
     },
   })
   errors.add(!ok)

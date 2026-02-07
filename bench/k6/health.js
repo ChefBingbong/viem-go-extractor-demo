@@ -4,9 +4,10 @@
  * Usage:
  *   k6 run --out json=bench/results/k6-health.json bench/k6/health.js
  */
-import http from 'k6/http'
+
 import { check, sleep } from 'k6'
-import { Trend, Rate, Counter } from 'k6/metrics'
+import http from 'k6/http'
+import { Counter, Rate, Trend } from 'k6/metrics'
 
 const tsLatency = new Trend('ts_health_latency', true)
 const goLatency = new Trend('go_health_latency', true)
@@ -15,8 +16,8 @@ const goErrors = new Rate('go_health_errors')
 const tsReqs = new Counter('ts_health_reqs')
 const goReqs = new Counter('go_health_reqs')
 
-const TS_URL = __ENV.TS_URL || 'http://localhost:8001'
-const GO_URL = __ENV.GO_URL || 'http://localhost:8000'
+const TS_URL = __ENV.TS_URL || 'http://localhost:8000'
+const GO_URL = __ENV.GO_URL || 'http://localhost:8001'
 
 export const options = {
   scenarios: {

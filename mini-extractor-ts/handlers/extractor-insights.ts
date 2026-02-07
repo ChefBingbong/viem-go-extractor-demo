@@ -8,10 +8,8 @@ export const extractorInsights = new Elysia().get(
     let pools = extractor.getPools()
 
     // Apply optional limit
-    const limit = query.limit ? Number(query.limit) : undefined
-    if (limit !== undefined && limit >= 0 && limit < pools.length) {
-      pools = pools.slice(0, limit)
-    }
+    const limit = pools.length > 300 ? 300 : pools.length
+    pools = pools.slice(0, limit)
 
     const blockNumber = extractor.logFilter.lastProcessedBlock
     return {

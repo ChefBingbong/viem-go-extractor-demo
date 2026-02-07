@@ -5,9 +5,10 @@
  *   k6 run bench/k6/insights.js
  *   k6 run --env POOL_LIMIT=500 bench/k6/insights.js
  */
-import http from 'k6/http'
+
 import { check, sleep } from 'k6'
-import { Trend, Rate, Counter } from 'k6/metrics'
+import http from 'k6/http'
+import { Counter, Rate, Trend } from 'k6/metrics'
 
 const tsLatency = new Trend('ts_insights_latency', true)
 const goLatency = new Trend('go_insights_latency', true)
@@ -18,8 +19,8 @@ const goBytes = new Counter('go_insights_bytes')
 const tsReqs = new Counter('ts_insights_reqs')
 const goReqs = new Counter('go_insights_reqs')
 
-const TS_URL = __ENV.TS_URL || 'http://localhost:8001'
-const GO_URL = __ENV.GO_URL || 'http://localhost:8000'
+const TS_URL = __ENV.TS_URL || 'http://localhost:8000'
+const GO_URL = __ENV.GO_URL || 'http://localhost:8001'
 const POOL_LIMIT = __ENV.POOL_LIMIT || '1000'
 
 export const options = {
@@ -53,7 +54,11 @@ export default function () {
   const tsOk = check(tsRes, {
     'TS status 200': (r) => r.status === 200,
     'TS has totalPools': (r) => {
-      try { return JSON.parse(r.body).totalPools >= 0 } catch { return false }
+      try {
+        return JSON.parse(r.body).totalPools >= 0
+      } catch {
+        return false
+      }
     },
     'TS latency < 2s': (r) => r.timings.duration < 2000,
   })
@@ -66,7 +71,11 @@ export default function () {
   const goOk = check(goRes, {
     'Go status 200': (r) => r.status === 200,
     'Go has totalPools': (r) => {
-      try { return JSON.parse(r.body).totalPools >= 0 } catch { return false }
+      try {
+        return JSON.parse(r.body).totalPools >= 0
+      } catch {
+        return false
+      }
     },
     'Go latency < 2s': (r) => r.timings.duration < 2000,
   })
