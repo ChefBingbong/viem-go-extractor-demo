@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./mini-extractor-ts/dist",
+    "rootDir": "./mini-extractor-ts",
+    "types": ["bun-types"]
+  },
+  "include": ["mini-extractor-ts/**/*"],
+  "exclude": ["mini-extractor-ts/dist"]
+}

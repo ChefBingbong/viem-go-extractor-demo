@@ -1,0 +1,18 @@
+# Environment
+.env
+
+# Node / Bun
+node_modules
+bun.lock
+
+# TypeScript build output
+mini-extractor-ts/dist
+
+# Cache
+cache
+
+# OS
+.DS_Store
+
+# Logs
+*.log
