@@ -4,25 +4,6 @@ A side-by-side benchmark comparing [viem](https://viem.sh/) (TypeScript/Bun) and
 
 Both extractors do the same work: sync pool data from on-chain UniswapV2 factories via multicall, decode Sync events from block logs, resolve ERC-20 token metadata, and serve the pool state over an HTTP API.
 
-## Project Structure
-
-```
-viem-go-extractor-demo/
-├── mini-extractor-ts/       # TypeScript extractor (Bun + viem + Elysia)
-├── mini-extractor-go/       # Go extractor (viem-go + net/http)
-├── bench/
-│   ├── go/                  # Go microbenchmarks (testing.B)
-│   ├── ts/                  # TypeScript microbenchmarks (time-based harness)
-│   ├── k6/                  # k6 API load test scripts
-│   ├── compare.ts           # CPU bench comparison + chart generator
-│   ├── compare-k6.ts        # k6 comparison + chart generator
-│   ├── results/             # Raw benchmark output (gitignored)
-│   └── comparison-results/  # Generated reports + SVG charts (gitignored)
-├── .env                     # Shared environment (RPC_URL, PORT, etc.)
-├── Makefile                 # All commands
-└── README.md
-```
-
 ## Prerequisites
 
 - [Bun](https://bun.sh/) (v1.3+)
