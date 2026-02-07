@@ -19,8 +19,8 @@ import { mainnet } from 'viem/chains'
 import { beforeAll, bench, describe } from 'vitest'
 import {
   factoryAbi,
-  UniV2EventsListenAbi,
   uniswapV2PairAbi,
+  UniV2EventsListenAbi,
 } from '../../mini-extractor-ts/lib/abi.js'
 
 // ─── Shared Config ───────────────────────────────────────────────────────────

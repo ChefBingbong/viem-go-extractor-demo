@@ -8,41 +8,41 @@
   <line x1="140" y1="60" x2="140" y2="370" stroke="#e5e7eb" stroke-width="1"/>
 <text x="140" y="390" text-anchor="middle" fill="#6b7280" font-size="11">0.000000</text>
 <line x1="248" y1="60" x2="248" y2="370" stroke="#e5e7eb" stroke-width="1"/>
-<text x="248" y="390" text-anchor="middle" fill="#6b7280" font-size="11">65.3</text>
+<text x="248" y="390" text-anchor="middle" fill="#6b7280" font-size="11">34.6</text>
 <line x1="356" y1="60" x2="356" y2="370" stroke="#e5e7eb" stroke-width="1"/>
-<text x="356" y="390" text-anchor="middle" fill="#6b7280" font-size="11">130.6</text>
+<text x="356" y="390" text-anchor="middle" fill="#6b7280" font-size="11">69.1</text>
 <line x1="464" y1="60" x2="464" y2="370" stroke="#e5e7eb" stroke-width="1"/>
-<text x="464" y="390" text-anchor="middle" fill="#6b7280" font-size="11">195.9</text>
+<text x="464" y="390" text-anchor="middle" fill="#6b7280" font-size="11">103.7</text>
 <line x1="572" y1="60" x2="572" y2="370" stroke="#e5e7eb" stroke-width="1"/>
-<text x="572" y="390" text-anchor="middle" fill="#6b7280" font-size="11">261.3</text>
+<text x="572" y="390" text-anchor="middle" fill="#6b7280" font-size="11">138.2</text>
 <line x1="680" y1="60" x2="680" y2="370" stroke="#e5e7eb" stroke-width="1"/>
-<text x="680" y="390" text-anchor="middle" fill="#6b7280" font-size="11">326.6</text>
+<text x="680" y="390" text-anchor="middle" fill="#6b7280" font-size="11">172.8</text>
 
   <text x="132" y="95" text-anchor="end" fill="#374151" font-size="12">Single getReserves</text>
-<rect x="140" y="66.2" width="109.07536076693181" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="255.0753607669318" y="79.5" fill="#00ADD8" font-size="11" font-weight="600">66.0 ms</text>
-<rect x="140" y="86.8" width="120.78579625741224" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="266.78579625741224" y="100.1" fill="#3178C6" font-size="11" font-weight="600">73.0 ms</text>
+<rect x="140" y="66.2" width="217.04759487116814" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="363.04759487116814" y="79.5" fill="#00ADD8" font-size="11" font-weight="600">69.5 ms</text>
+<rect x="140" y="86.8" width="215.11886660273422" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="361.1188666027342" y="100.1" fill="#3178C6" font-size="11" font-weight="600">68.8 ms</text>
 <text x="132" y="157" text-anchor="end" fill="#374151" font-size="12">Batch 10</text>
-<rect x="140" y="128.2" width="114.10988353839758" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="260.1098835383976" y="141.5" fill="#00ADD8" font-size="11" font-weight="600">69.0 ms</text>
-<rect x="140" y="148.79999999999998" width="117.49986511238004" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="263.49986511238" y="162.1" fill="#3178C6" font-size="11" font-weight="600">71.1 ms</text>
+<rect x="140" y="128.2" width="222.78718035252268" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="368.7871803525227" y="141.5" fill="#00ADD8" font-size="11" font-weight="600">71.3 ms</text>
+<rect x="140" y="148.79999999999998" width="242.60394221426856" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="388.60394221426856" y="162.1" fill="#3178C6" font-size="11" font-weight="600">77.6 ms</text>
 <text x="132" y="219" text-anchor="end" fill="#374151" font-size="12">Batch 50</text>
-<rect x="140" y="190.2" width="127.46535463281933" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="273.4653546328193" y="203.5" fill="#00ADD8" font-size="11" font-weight="600">77.1 ms</text>
-<rect x="140" y="210.79999999999998" width="142.99956009006283" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="288.9995600900628" y="224.1" fill="#3178C6" font-size="11" font-weight="600">86.5 ms</text>
+<rect x="140" y="190.2" width="223.21086170584667" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="369.2108617058467" y="203.5" fill="#00ADD8" font-size="11" font-weight="600">71.4 ms</text>
+<rect x="140" y="210.79999999999998" width="306.30970239628044" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="452.30970239628044" y="224.1" fill="#3178C6" font-size="11" font-weight="600">98.0 ms</text>
 <text x="132" y="281" text-anchor="end" fill="#374151" font-size="12">Batch 100</text>
-<rect x="140" y="252.2" width="124.52263582093634" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="270.52263582093633" y="265.5" fill="#00ADD8" font-size="11" font-weight="600">75.3 ms</text>
-<rect x="140" y="272.8" width="540" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="686" y="286.1" fill="#3178C6" font-size="11" font-weight="600">326.6 ms</text>
+<rect x="140" y="252.2" width="228.53485009159257" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="374.5348500915926" y="265.5" fill="#00ADD8" font-size="11" font-weight="600">73.1 ms</text>
+<rect x="140" y="272.8" width="364.0183870502362" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="510.0183870502362" y="286.1" fill="#3178C6" font-size="11" font-weight="600">116.5 ms</text>
 <text x="132" y="343" text-anchor="end" fill="#374151" font-size="12">Batch 200</text>
-<rect x="140" y="314.2" width="150.0182740233078" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="296.0182740233078" y="327.5" fill="#00ADD8" font-size="11" font-weight="600">90.7 ms</text>
-<rect x="140" y="334.8" width="471.61236972969283" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="617.6123697296928" y="348.1" fill="#3178C6" font-size="11" font-weight="600">285.2 ms</text>
+<rect x="140" y="314.2" width="382.3732651126581" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="528.3732651126581" y="327.5" fill="#00ADD8" font-size="11" font-weight="600">122.4 ms</text>
+<rect x="140" y="334.8" width="540" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="686" y="348.1" fill="#3178C6" font-size="11" font-weight="600">172.8 ms</text>
 
   
     <rect x="690" y="60" width="12" height="12" rx="2" fill="#00ADD8"/>

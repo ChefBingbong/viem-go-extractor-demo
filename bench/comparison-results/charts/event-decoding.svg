@@ -8,26 +8,26 @@
   <line x1="140" y1="60" x2="140" y2="350" stroke="#e5e7eb" stroke-width="1"/>
 <text x="140" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.000000</text>
 <line x1="248" y1="60" x2="248" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="248" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.226</text>
+<text x="248" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.217</text>
 <line x1="356" y1="60" x2="356" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="356" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.504</text>
+<text x="356" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.482</text>
 <line x1="464" y1="60" x2="464" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="464" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.844</text>
+<text x="464" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.804</text>
 <line x1="572" y1="60" x2="572" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="572" y="370" text-anchor="middle" fill="#6b7280" font-size="11">1.3</text>
+<text x="572" y="370" text-anchor="middle" fill="#6b7280" font-size="11">1.2</text>
 <line x1="680" y1="60" x2="680" y2="350" stroke="#e5e7eb" stroke-width="1"/>
-<text x="680" y="370" text-anchor="middle" fill="#6b7280" font-size="11">1.8</text>
+<text x="680" y="370" text-anchor="middle" fill="#6b7280" font-size="11">1.7</text>
 
   <text x="132" y="136.5" text-anchor="end" fill="#374151" font-size="12">Single Sync decode</text>
 <rect x="140" y="74.5" width="2" height="43.5" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="146.08081143244897" y="100.25" fill="#00ADD8" font-size="11" font-weight="600">0.000153 ms</text>
+<text x="146.090511462043" y="100.25" fill="#00ADD8" font-size="11" font-weight="600">0.000165 ms</text>
 <rect x="140" y="120" width="2" height="43.5" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="146.9217466642733" y="145.75" fill="#3178C6" font-size="11" font-weight="600">0.002 ms</text>
+<text x="146.93638976732404" y="145.75" fill="#3178C6" font-size="11" font-weight="600">0.002 ms</text>
 <text x="132" y="281.5" text-anchor="end" fill="#374151" font-size="12">Batch 1000 Sync decode</text>
-<rect x="140" y="219.5" width="81.23429557579826" height="43.5" rx="3" fill="#00ADD8" opacity="0.85"/>
-<text x="227.23429557579826" y="245.25" fill="#00ADD8" font-size="11" font-weight="600">0.166 ms</text>
+<rect x="140" y="219.5" width="85.58659601590713" height="43.5" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="231.58659601590713" y="245.25" fill="#00ADD8" font-size="11" font-weight="600">0.169 ms</text>
 <rect x="140" y="265" width="540" height="43.5" rx="3" fill="#3178C6" opacity="0.85"/>
-<text x="686" y="290.75" fill="#3178C6" font-size="11" font-weight="600">1.8 ms</text>
+<text x="686" y="290.75" fill="#3178C6" font-size="11" font-weight="600">1.7 ms</text>
 
   
     <rect x="690" y="60" width="12" height="12" rx="2" fill="#00ADD8"/>

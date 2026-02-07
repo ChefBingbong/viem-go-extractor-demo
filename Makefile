@@ -109,7 +109,7 @@ bench-compare: ## Compare Go vs TS results and generate report + charts
 # ─── Benchmarks: Run All (single Anvil for both Go + TS) ─────────────────────
 bench-all: ## Run all microbenchmarks + comparison (single Anvil instance)
 	@mkdir -p bench/results
-	bash bench/anvil.sh sh -c 'make _bench-go-inner && make _bench-ts-inner && make bench-compare'
+	bash bench/anvil.sh sh -c ' make _bench-ts-inner && make _bench-go-inner && make bench-compare'
 	@echo ""
 	@echo "Done! Full comparison report: bench/comparison-results/comparison.md"
 	@echo "Charts: bench/comparison-results/charts/"

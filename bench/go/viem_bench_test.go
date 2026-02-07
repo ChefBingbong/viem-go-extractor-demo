@@ -22,29 +22,30 @@ import (
 	"github.com/ChefBingbong/viem-go/utils/formatters"
 )
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Shared state (initialized once via TestMain, like TS beforeAll) ─────────
 
 var (
 	uniV2Factory = common.HexToAddress("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f")
 	knownPair    = common.HexToAddress("0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc") // USDC-WETH
+
+	sharedClient  *client.PublicClient
+	pairAddresses []common.Address
+	pairABI       = univ2pair.MustParsedABI()
+	factoryABI    = univ2factory.MustParsedABI()
 )
 
 func boolPtr(v bool) *bool { return &v }
 
-func rpcURL(t testing.TB) string {
-	t.Helper()
-	url := os.Getenv("RPC_URL")
-	if url == "" {
-		t.Skip("RPC_URL not set — skipping RPC benchmark")
+func TestMain(m *testing.M) {
+	rpcURL := os.Getenv("RPC_URL")
+	if rpcURL == "" {
+		fmt.Fprintln(os.Stderr, "RPC_URL not set — skipping benchmarks")
+		os.Exit(0)
 	}
-	return url
-}
 
-func setupClient(t testing.TB) *client.PublicClient {
-	t.Helper()
 	c, err := client.CreatePublicClient(client.PublicClientConfig{
 		Chain:     &definitions.Mainnet,
-		Transport: transport.HTTP(rpcURL(t)),
+		Transport: transport.HTTP(rpcURL),
 		Batch: &client.BatchOptions{
 			Multicall: &client.MulticallBatchOptions{
 				BatchSize: 8196,
@@ -53,18 +54,14 @@ func setupClient(t testing.TB) *client.PublicClient {
 		},
 	})
 	if err != nil {
-		t.Fatal(err)
+		fmt.Fprintf(os.Stderr, "Failed to create client: %v\n", err)
+		os.Exit(1)
 	}
-	return c
-}
+	sharedClient = c
 
-func fetchPairAddresses(t testing.TB, c *client.PublicClient, count int) []common.Address {
-	t.Helper()
 	ctx := context.Background()
-	factoryABI := univ2factory.MustParsedABI()
-
-	contracts := make([]public.MulticallContract, count)
-	for i := 0; i < count; i++ {
+	contracts := make([]public.MulticallContract, 200)
+	for i := 0; i < 200; i++ {
 		contracts[i] = public.MulticallContract{
 			Address:      uniV2Factory,
 			ABI:          factoryABI,
@@ -72,24 +69,24 @@ func fetchPairAddresses(t testing.TB, c *client.PublicClient, count int) []commo
 			Args:         []any{big.NewInt(int64(i))},
 		}
 	}
-
 	results, err := public.Multicall(ctx, c, public.MulticallParameters{
 		Contracts:    contracts,
 		AllowFailure: boolPtr(true),
 	})
 	if err != nil {
-		t.Fatal(err)
+		fmt.Fprintf(os.Stderr, "Failed to fetch pair addresses: %v\n", err)
+		os.Exit(1)
 	}
-
-	var addrs []common.Address
 	for _, r := range results {
 		if r.Status == "success" {
 			if addr, ok := r.Result.(common.Address); ok {
-				addrs = append(addrs, addr)
+				pairAddresses = append(pairAddresses, addr)
 			}
 		}
 	}
-	return addrs
+	fmt.Fprintf(os.Stderr, "Setup: client created, %d pair addresses fetched\n", len(pairAddresses))
+
+	os.Exit(m.Run())
 }
 
 func memStatsMB() float64 {
@@ -101,13 +98,10 @@ func memStatsMB() float64 {
 // ─── 1. Multicall Benchmarks ────────────────────────────────────────────────
 
 func BenchmarkMulticallSingle(b *testing.B) {
-	c := setupClient(b)
 	ctx := context.Background()
-	pairABI := univ2pair.MustParsedABI()
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := public.Multicall(ctx, c, public.MulticallParameters{
+		_, err := public.Multicall(ctx, sharedClient, public.MulticallParameters{
 			Contracts: []public.MulticallContract{
 				{Address: knownPair, ABI: pairABI, FunctionName: "getReserves"},
 			},
@@ -119,41 +113,35 @@ func BenchmarkMulticallSingle(b *testing.B) {
 	}
 }
 
-func BenchmarkMulticallBatch(b *testing.B) {
-	c := setupClient(b)
+func benchMulticallBatch(b *testing.B, size int) {
 	ctx := context.Background()
-	pairABI := univ2pair.MustParsedABI()
-	pairs := fetchPairAddresses(b, c, 200)
-
-	for _, size := range []int{10, 50, 100, 200} {
-		if size > len(pairs) {
-			continue
+	chunk := pairAddresses[:size]
+	contracts := make([]public.MulticallContract, len(chunk))
+	for j, addr := range chunk {
+		contracts[j] = public.MulticallContract{
+			Address:      addr,
+			ABI:          pairABI,
+			FunctionName: "getReserves",
 		}
-		b.Run(fmt.Sprintf("batch_%d", size), func(b *testing.B) {
-			chunk := pairs[:size]
-			contracts := make([]public.MulticallContract, len(chunk))
-			for j, addr := range chunk {
-				contracts[j] = public.MulticallContract{
-					Address:      addr,
-					ABI:          pairABI,
-					FunctionName: "getReserves",
-				}
-			}
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				_, err := public.Multicall(ctx, c, public.MulticallParameters{
-					Contracts:    contracts,
-					AllowFailure: boolPtr(true),
-				})
-				if err != nil {
-					b.Fatal(err)
-				}
-			}
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := public.Multicall(ctx, sharedClient, public.MulticallParameters{
+			Contracts:    contracts,
+			AllowFailure: boolPtr(true),
 		})
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
-// ─── 2. Event Decoding Benchmark ────────────────────────────────────────────
+func BenchmarkMulticallBatch_10(b *testing.B)  { benchMulticallBatch(b, 10) }
+func BenchmarkMulticallBatch_50(b *testing.B)  { benchMulticallBatch(b, 50) }
+func BenchmarkMulticallBatch_100(b *testing.B) { benchMulticallBatch(b, 100) }
+func BenchmarkMulticallBatch_200(b *testing.B) { benchMulticallBatch(b, 200) }
+
+// ─── 2. Event Decoding Benchmarks ───────────────────────────────────────────
 
 func BenchmarkDecodeSyncEvent(b *testing.B) {
 	rawLog := formatters.Log{
@@ -161,7 +149,6 @@ func BenchmarkDecodeSyncEvent(b *testing.B) {
 		Topics:  []string{extractor.SyncEventTopic.Hex()},
 		Data:    "0x00000000000000000000000000000000000000000000000000005af3107a400000000000000000000000000000000000000000000000000000000000003b9aca00",
 	}
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _, err := extractor.DecodeSyncEvent(rawLog)
@@ -180,7 +167,6 @@ func BenchmarkDecodeSyncEventBatch(b *testing.B) {
 			Data:    "0x00000000000000000000000000000000000000000000000000005af3107a400000000000000000000000000000000000000000000000000000000000003b9aca00",
 		}
 	}
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, l := range logs {
@@ -191,105 +177,100 @@ func BenchmarkDecodeSyncEventBatch(b *testing.B) {
 
 // ─── 3. Factory Sync Throughput ─────────────────────────────────────────────
 
-func BenchmarkFactorySyncChunks(b *testing.B) {
-	c := setupClient(b)
+func benchFactorySyncChunk(b *testing.B, chunkSize int) {
 	ctx := context.Background()
-	factoryABI := univ2factory.MustParsedABI()
-	pairABI := univ2pair.MustParsedABI()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		addrContracts := make([]public.MulticallContract, chunkSize)
+		for j := 0; j < chunkSize; j++ {
+			addrContracts[j] = public.MulticallContract{
+				Address:      uniV2Factory,
+				ABI:          factoryABI,
+				FunctionName: "allPairs",
+				Args:         []any{big.NewInt(int64(j))},
+			}
+		}
+		addrResults, err := public.Multicall(ctx, sharedClient, public.MulticallParameters{
+			Contracts:    addrContracts,
+			AllowFailure: boolPtr(true),
+		})
+		if err != nil {
+			b.Fatal(err)
+		}
 
-	for _, chunkSize := range []int{50, 100, 500} {
-		b.Run(fmt.Sprintf("chunk_%d", chunkSize), func(b *testing.B) {
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				// 1. Fetch pair addresses
-				addrContracts := make([]public.MulticallContract, chunkSize)
-				for j := 0; j < chunkSize; j++ {
-					addrContracts[j] = public.MulticallContract{
-						Address:      uniV2Factory,
-						ABI:          factoryABI,
-						FunctionName: "allPairs",
-						Args:         []any{big.NewInt(int64(j))},
-					}
-				}
-				addrResults, err := public.Multicall(ctx, c, public.MulticallParameters{
-					Contracts:    addrContracts,
-					AllowFailure: boolPtr(true),
-				})
-				if err != nil {
-					b.Fatal(err)
-				}
-
-				var addrs []common.Address
-				for _, r := range addrResults {
-					if r.Status == "success" {
-						if addr, ok := r.Result.(common.Address); ok {
-							addrs = append(addrs, addr)
-						}
-					}
-				}
-
-				// 2. Fetch token0 + token1 + getReserves for all
-				infoContracts := make([]public.MulticallContract, 0, len(addrs)*3)
-				for _, addr := range addrs {
-					infoContracts = append(infoContracts,
-						public.MulticallContract{Address: addr, ABI: pairABI, FunctionName: "token0"},
-						public.MulticallContract{Address: addr, ABI: pairABI, FunctionName: "token1"},
-						public.MulticallContract{Address: addr, ABI: pairABI, FunctionName: "getReserves"},
-					)
-				}
-				_, err = public.Multicall(ctx, c, public.MulticallParameters{
-					Contracts:    infoContracts,
-					AllowFailure: boolPtr(true),
-				})
-				if err != nil {
-					b.Fatal(err)
+		var addrs []common.Address
+		for _, r := range addrResults {
+			if r.Status == "success" {
+				if addr, ok := r.Result.(common.Address); ok {
+					addrs = append(addrs, addr)
 				}
 			}
+		}
+
+		infoContracts := make([]public.MulticallContract, 0, len(addrs)*3)
+		for _, addr := range addrs {
+			infoContracts = append(infoContracts,
+				public.MulticallContract{Address: addr, ABI: pairABI, FunctionName: "token0"},
+				public.MulticallContract{Address: addr, ABI: pairABI, FunctionName: "token1"},
+				public.MulticallContract{Address: addr, ABI: pairABI, FunctionName: "getReserves"},
+			)
+		}
+		_, err = public.Multicall(ctx, sharedClient, public.MulticallParameters{
+			Contracts:    infoContracts,
+			AllowFailure: boolPtr(true),
 		})
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
-// ─── 4. JSON Serialization Benchmark ────────────────────────────────────────
+func BenchmarkFactorySyncChunk_50(b *testing.B)  { benchFactorySyncChunk(b, 50) }
+func BenchmarkFactorySyncChunk_100(b *testing.B) { benchFactorySyncChunk(b, 100) }
+func BenchmarkFactorySyncChunk_500(b *testing.B) { benchFactorySyncChunk(b, 500) }
 
-func BenchmarkPoolSerializationJSON(b *testing.B) {
-	for _, poolCount := range []int{100, 1000, 5000, 10000} {
-		b.Run(fmt.Sprintf("pools_%d", poolCount), func(b *testing.B) {
-			pools := make([]extractor.PoolStateJSON, poolCount)
-			for i := 0; i < poolCount; i++ {
-				pools[i] = extractor.PoolStateJSON{
-					Address: fmt.Sprintf("0x%040x", i),
-					Token0: extractor.TokenInfo{
-						Address: fmt.Sprintf("0x%040x", i*2), Symbol: "TK0", Name: "Token0", Decimals: 18,
-					},
-					Token1: extractor.TokenInfo{
-						Address: fmt.Sprintf("0x%040x", i*2+1), Symbol: "TK1", Name: "Token1", Decimals: 18,
-					},
-					Reserve0: "1000000000000000000",
-					Reserve1: "2000000000000000000",
-					Fee:      0.003,
-					Provider: "UniswapV2",
-				}
-			}
-			resp := map[string]any{
-				"blockNumber": 12345678,
-				"totalPools":  poolCount,
-				"syncing":     false,
-				"pools":       pools,
-			}
+// ─── 4. JSON Serialization Benchmarks ───────────────────────────────────────
 
-			b.ResetTimer()
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				_, err := json.Marshal(resp)
-				if err != nil {
-					b.Fatal(err)
-				}
-			}
-		})
+func benchPoolSerializationJSON(b *testing.B, poolCount int) {
+	pools := make([]extractor.PoolStateJSON, poolCount)
+	for i := 0; i < poolCount; i++ {
+		pools[i] = extractor.PoolStateJSON{
+			Address: fmt.Sprintf("0x%040x", i),
+			Token0: extractor.TokenInfo{
+				Address: fmt.Sprintf("0x%040x", i*2), Symbol: "TK0", Name: "Token0", Decimals: 18,
+			},
+			Token1: extractor.TokenInfo{
+				Address: fmt.Sprintf("0x%040x", i*2+1), Symbol: "TK1", Name: "Token1", Decimals: 18,
+			},
+			Reserve0: "1000000000000000000",
+			Reserve1: "2000000000000000000",
+			Fee:      0.003,
+			Provider: "UniswapV2",
+		}
+	}
+	resp := map[string]any{
+		"blockNumber": 12345678,
+		"totalPools":  poolCount,
+		"syncing":     false,
+		"pools":       pools,
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(resp)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
-// ─── 5. Memory Profiling for Pool Map ───────────────────────────────────────
+func BenchmarkPoolSerializationJSON_100(b *testing.B)   { benchPoolSerializationJSON(b, 100) }
+func BenchmarkPoolSerializationJSON_1000(b *testing.B)  { benchPoolSerializationJSON(b, 1000) }
+func BenchmarkPoolSerializationJSON_5000(b *testing.B)  { benchPoolSerializationJSON(b, 5000) }
+func BenchmarkPoolSerializationJSON_10000(b *testing.B) { benchPoolSerializationJSON(b, 10000) }
+
+// ─── 5. Memory Profiling ────────────────────────────────────────────────────
 
 func TestPoolMapMemoryProfile(t *testing.T) {
 	runtime.GC()
