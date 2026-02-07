@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420">
+  <style>text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }</style>
+  <rect width="800" height="420" fill="#ffffff" rx="8"/>
+  <rect x="1" y="1" width="798" height="418" fill="none" stroke="#d1d5db" rx="8"/>
+  <text x="400" y="35" text-anchor="middle" fill="#374151" font-size="16" font-weight="700">Multicall Latency (ms) — lower is better</text>
+  
+  <line x1="140" y1="60" x2="140" y2="370" stroke="#e5e7eb" stroke-width="1"/>
+<text x="140" y="390" text-anchor="middle" fill="#6b7280" font-size="11">0.000000</text>
+<line x1="248" y1="60" x2="248" y2="370" stroke="#e5e7eb" stroke-width="1"/>
+<text x="248" y="390" text-anchor="middle" fill="#6b7280" font-size="11">69.1</text>
+<line x1="356" y1="60" x2="356" y2="370" stroke="#e5e7eb" stroke-width="1"/>
+<text x="356" y="390" text-anchor="middle" fill="#6b7280" font-size="11">138.2</text>
+<line x1="464" y1="60" x2="464" y2="370" stroke="#e5e7eb" stroke-width="1"/>
+<text x="464" y="390" text-anchor="middle" fill="#6b7280" font-size="11">207.3</text>
+<line x1="572" y1="60" x2="572" y2="370" stroke="#e5e7eb" stroke-width="1"/>
+<text x="572" y="390" text-anchor="middle" fill="#6b7280" font-size="11">276.4</text>
+<line x1="680" y1="60" x2="680" y2="370" stroke="#e5e7eb" stroke-width="1"/>
+<text x="680" y="390" text-anchor="middle" fill="#6b7280" font-size="11">345.5</text>
+
+  <text x="132" y="95" text-anchor="end" fill="#374151" font-size="12">Single getReserves</text>
+<rect x="140" y="66.2" width="109.31918247408711" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="255.3191824740871" y="79.5" fill="#00ADD8" font-size="11" font-weight="600">69.9 ms</text>
+<rect x="140" y="86.8" width="112.14465146451845" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="258.14465146451846" y="100.1" fill="#3178C6" font-size="11" font-weight="600">71.8 ms</text>
+<text x="132" y="157" text-anchor="end" fill="#374151" font-size="12">Batch 10</text>
+<rect x="140" y="128.2" width="116.23126354164403" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="262.231263541644" y="141.5" fill="#00ADD8" font-size="11" font-weight="600">74.4 ms</text>
+<rect x="140" y="148.79999999999998" width="110.98432471939397" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="256.98432471939395" y="162.1" fill="#3178C6" font-size="11" font-weight="600">71.0 ms</text>
+<text x="132" y="219" text-anchor="end" fill="#374151" font-size="12">Batch 50</text>
+<rect x="140" y="190.2" width="116.60394544529923" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="262.60394544529925" y="203.5" fill="#00ADD8" font-size="11" font-weight="600">74.6 ms</text>
+<rect x="140" y="210.79999999999998" width="146.18625195543493" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="292.18625195543495" y="224.1" fill="#3178C6" font-size="11" font-weight="600">93.5 ms</text>
+<text x="132" y="281" text-anchor="end" fill="#374151" font-size="12">Batch 100</text>
+<rect x="140" y="252.2" width="130.6741747057937" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="276.6741747057937" y="265.5" fill="#00ADD8" font-size="11" font-weight="600">83.6 ms</text>
+<rect x="140" y="272.8" width="343.93286884480995" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="489.93286884480995" y="286.1" fill="#3178C6" font-size="11" font-weight="600">220.1 ms</text>
+<text x="132" y="343" text-anchor="end" fill="#374151" font-size="12">Batch 200</text>
+<rect x="140" y="314.2" width="152.54101194043102" height="18.599999999999998" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="298.541011940431" y="327.5" fill="#00ADD8" font-size="11" font-weight="600">97.6 ms</text>
+<rect x="140" y="334.8" width="540" height="18.599999999999998" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="686" y="348.1" fill="#3178C6" font-size="11" font-weight="600">345.5 ms</text>
+
+  
+    <rect x="690" y="60" width="12" height="12" rx="2" fill="#00ADD8"/>
+    <text x="708" y="71" fill="#374151" font-size="12">Go</text>
+    <rect x="690" y="82" width="12" height="12" rx="2" fill="#3178C6"/>
+    <text x="708" y="93" fill="#374151" font-size="12">TS</text>
+  
+</svg>

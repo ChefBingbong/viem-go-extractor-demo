@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <style>text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }</style>
+  <rect width="800" height="400" fill="#ffffff" rx="8"/>
+  <rect x="1" y="1" width="798" height="398" fill="none" stroke="#d1d5db" rx="8"/>
+  <text x="400" y="35" text-anchor="middle" fill="#374151" font-size="16" font-weight="700">JSON Serialization Latency (ms) — lower is better</text>
+  <text x="400" y="52" text-anchor="middle" fill="#6b7280" font-size="11">(log scale)</text>
+  <line x1="140" y1="60" x2="140" y2="350" stroke="#e5e7eb" stroke-width="1"/>
+<text x="140" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.000000</text>
+<line x1="248" y1="60" x2="248" y2="350" stroke="#e5e7eb" stroke-width="1"/>
+<text x="248" y="370" text-anchor="middle" fill="#6b7280" font-size="11">0.508</text>
+<line x1="356" y1="60" x2="356" y2="350" stroke="#e5e7eb" stroke-width="1"/>
+<text x="356" y="370" text-anchor="middle" fill="#6b7280" font-size="11">1.3</text>
+<line x1="464" y1="60" x2="464" y2="350" stroke="#e5e7eb" stroke-width="1"/>
+<text x="464" y="370" text-anchor="middle" fill="#6b7280" font-size="11">2.4</text>
+<line x1="572" y1="60" x2="572" y2="350" stroke="#e5e7eb" stroke-width="1"/>
+<text x="572" y="370" text-anchor="middle" fill="#6b7280" font-size="11">4.2</text>
+<line x1="680" y1="60" x2="680" y2="350" stroke="#e5e7eb" stroke-width="1"/>
+<text x="680" y="370" text-anchor="middle" fill="#6b7280" font-size="11">6.8</text>
+
+  <text x="132" y="100.25" text-anchor="end" fill="#374151" font-size="12">100 pools</text>
+<rect x="140" y="67.25" width="13.427444805702448" height="21.75" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="159.42744480570244" y="82.125" fill="#00ADD8" font-size="11" font-weight="600">0.052 ms</text>
+<rect x="140" y="91" width="7.341369118743727" height="21.75" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="153.34136911874373" y="105.875" fill="#3178C6" font-size="11" font-weight="600">0.028 ms</text>
+<text x="132" y="172.75" text-anchor="end" fill="#374151" font-size="12">1,000 pools</text>
+<rect x="140" y="139.75" width="110.52850295156212" height="21.75" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="256.52850295156213" y="154.625" fill="#00ADD8" font-size="11" font-weight="600">0.523 ms</text>
+<rect x="140" y="163.5" width="53.8002327361899" height="21.75" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="199.8002327361899" y="178.375" fill="#3178C6" font-size="11" font-weight="600">0.227 ms</text>
+<text x="132" y="245.25" text-anchor="end" fill="#374151" font-size="12">5,000 pools</text>
+<rect x="140" y="212.25" width="332.0731442977009" height="21.75" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="478.0731442977009" y="227.125" fill="#00ADD8" font-size="11" font-weight="600">2.5 ms</text>
+<rect x="140" y="236" width="235.91929565084303" height="21.75" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="381.919295650843" y="250.875" fill="#3178C6" font-size="11" font-weight="600">1.5 ms</text>
+<text x="132" y="317.75" text-anchor="end" fill="#374151" font-size="12">10,000 pools</text>
+<rect x="140" y="284.75" width="540" height="21.75" rx="3" fill="#00ADD8" opacity="0.85"/>
+<text x="686" y="299.625" fill="#00ADD8" font-size="11" font-weight="600">6.8 ms</text>
+<rect x="140" y="308.5" width="382.61891691503297" height="21.75" rx="3" fill="#3178C6" opacity="0.85"/>
+<text x="528.618916915033" y="323.375" fill="#3178C6" font-size="11" font-weight="600">3.3 ms</text>
+
+  
+    <rect x="690" y="60" width="12" height="12" rx="2" fill="#00ADD8"/>
+    <text x="708" y="71" fill="#374151" font-size="12">Go</text>
+    <rect x="690" y="82" width="12" height="12" rx="2" fill="#3178C6"/>
+    <text x="708" y="93" fill="#374151" font-size="12">TS</text>
+  
+</svg>
