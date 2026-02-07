@@ -1,4 +1,4 @@
-# viem-go: A Go Implementation of viem
+# viem-go: real world comparison
 
 [viem-go](https://github.com/ChefBingbong/viem-go) brings the developer experience of [viem](https://viem.sh/) to Go. This repository demonstrates that by building the **same UniswapV2 pool extractor** in both TypeScript (viem) and Go (viem-go) — the APIs, patterns, and architecture are nearly identical.
 
