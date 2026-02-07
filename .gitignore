@@ -14,5 +14,12 @@ cache
 # OS
 .DS_Store
 
+# Bench results (regenerated on each run)
+bench/results
+bench/comparison-results
+
+# Go build
+bin
+
 # Logs
 *.log

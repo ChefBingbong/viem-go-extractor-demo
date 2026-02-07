@@ -6,7 +6,7 @@ import type { FactoryV2 } from './extractor/UniV2Types.js'
 const RPC_URL = process.env.RPC_URL
 if (!RPC_URL) throw new Error('RPC_URL env var is required')
 
-export const PORT = Number(process.env.TS_PORT ?? 8000)
+export const PORT = Number(process.env.PORT ?? 3000)
 
 const uniswapV2Factory: FactoryV2 = {
   address: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
@@ -26,6 +26,6 @@ export const client: PublicClient = createPublicClient({
 export const EXTRACTOR_CONFIG: ExtractorConfig = {
   client,
   factoriesV2: [uniswapV2Factory],
-  cacheDir: process.env.CACHE_DIR ?? './cache/ts-cache',
+  cacheDir: process.env.CACHE_DIR ?? './mini-extractor-ts/cache',
   logDepth: Number(process.env.LOG_DEPTH ?? 50),
 }

@@ -3,14 +3,23 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/ChefBingbong/mini-extractor-go/extractor"
 )
 
 // ExtractorInsightsHandler returns an HTTP handler for /extractor-insights.
+// Supports optional ?limit=N query param to cap the number of pools returned.
 func ExtractorInsightsHandler(ext *extractor.Extractor) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pools := ext.GetPools()
+
+		// Apply optional limit
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			if limit, err := strconv.Atoi(limitStr); err == nil && limit >= 0 && limit < len(pools) {
+				pools = pools[:limit]
+			}
+		}
 
 		// Convert pools to JSON-safe form (bigints as strings)
 		poolsJSON := make([]extractor.PoolStateJSON, len(pools))

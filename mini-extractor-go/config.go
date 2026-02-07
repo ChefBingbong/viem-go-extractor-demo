@@ -81,5 +81,5 @@ func MustLoadConfig() (*client.PublicClient, extractor.Config) {
 
 // Port returns the HTTP port from env or default.
 func Port() int {
-	return getEnvInt("PORT", 8000)
+	return getEnvInt("GO_PORT", 8001)
 }

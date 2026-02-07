@@ -15,6 +15,6 @@
     "rootDir": "./mini-extractor-ts",
     "types": ["bun-types"]
   },
-  "include": ["mini-extractor-ts/**/*"],
+  "include": ["mini-extractor-ts/**/*", "bench/**/*"],
   "exclude": ["mini-extractor-ts/dist"]
 }
